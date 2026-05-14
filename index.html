@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOVEFLIX ❤️</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        #splash-screen {
+            position: fixed; inset: 0; background: #050505; z-index: 1000000;
+            display: flex; justify-content: center; align-items: center; transition: opacity 0.6s ease;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <h1 style="color:#e50914; font-size:4rem; letter-spacing:8px; animation: pulse 1.5s infinite;">LOVEFLIX</h1>
+</div>
+
+<!-- SECRET TRIGGER -->
+<div class="secret-trigger" onclick="secretTap()">🌙</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo" onclick="showHome()">LOVEFLIX</div>
+    <div class="nav-right">
+        <button class="nav-btn" onclick="showPrivate()">Private Vault 🔒</button>
+    </div>
+</nav>
+
+<!-- CREATE MEMORY -->
+<button class="create-memory-btn" onclick="openCreator()">＋ Create Memory</button>
+
+<!-- CREATOR PANEL -->
+<div class="creator-panel" id="creatorPanel">
+    <div class="creator-box">
+        <h2>Create New Memory ✨</h2>
+        <input type="text" id="memoryTitle" placeholder="Memory Title">
+        <textarea id="memoryDescription" placeholder="Memory Description"></textarea>
+        <input type="file" id="memoryImage" accept="image/*">
+        <div class="creator-actions">
+            <button onclick="createMemory()">Create</button>
+            <button onclick="closeCreator()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- PASSWORD SCREEN -->
+<div class="password-screen" id="passwordScreen">
+    <div class="password-box">
+        <h1>Private Vault 🔒</h1>
+        <input type="password" id="passwordInput" placeholder="Enter Password">
+        <div class="password-buttons">
+            <button class="unlock-btn" onclick="unlockPrivate()">Unlock</button>
+            <button class="back-btn" onclick="closePasswordScreen()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- HOME SCREEN -->
+<section id="homeScreen">
+    <section class="hero home-hero">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <h1>Our Story ❤️</h1>
+            <p>Every memory. Every laugh. Every phase of us.</p>
+            <div class="hero-buttons">
+                <button class="play-btn" onclick="scrollToRows()">▶ Start Watching</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- TIMELINE (RESTORED) -->
+    <section class="timeline-section">
+        <div class="timeline-progress"></div>
+        <div class="timeline">
+            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="timeline-year">2024</div><h3>We Found Trouble ❤️</h3><p>Two strangers becoming dangerously attached.</p></div></div>
+            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="timeline-year">2024</div><h3>The First Time We Met 🌙</h3><p>The nervous tension. The first touch.</p></div></div>
+            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="timeline-year">2025</div><h3>Lost In Each Other 🔥</h3><p>Late nights. Messy emotions. Rough love.</p></div></div>
+            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><div class="timeline-year">2026</div><h3>Still Starving For You ❤️</h3><p>Still obsessed. Still attached.</p></div></div>
+        </div>
+    </section>
+
+    <section class="section"><h2>Continue Watching ❤️</h2><div class="netflix-row" id="continueWatching"></div></section>
+    <section class="section"><h2>Favorite Memories ❤️</h2><div class="netflix-row" id="favoriteRows"></div></section>
+    <div id="rows"></div>
+</section>
+
+<!-- MEMORY SCREEN -->
+<section id="memoryScreen" style="display:none;"><div id="memoryContent"></div></section>
+
+<!-- VIEWER (RESTORED) -->
+<div class="viewer" id="viewer" style="display:none;">
+    <span class="close" onclick="closeViewer()">×</span>
+    <button class="viewer-btn left-btn" onclick="prevImage()">❮</button>
+    <img id="viewerImage" src="">
+    <button class="viewer-btn right-btn" onclick="nextImage()">❯</button>
+    <div class="image-counter" id="imageCounter">1 / 1</div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>First Date ❤️</title>
+
+<link
+rel="stylesheet"
+href="../css/style.css">
+
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+
+<nav class="navbar">
+
+<div class="logo">
+LOVEFLIX
+</div>
+
+<div class="nav-right">
+
+<button
+class="nav-btn"
+onclick="goBack()">
+
+← Back
+
+</button>
+
+</div>
+
+</nav>
+
+<!-- HERO -->
+
+<section class="hero first-date-hero">
+
+<div class="overlay"></div>
+
+<div class="hero-content">
+
+<h1>
+First Date ❤️
+</h1>
+
+<p>
+The day everything changed forever.
+</p>
+
+<div class="hero-buttons">
+
+<button
+class="play-btn"
+onclick="scrollToPhotos()">
+
+▶ Open Memories
+
+</button>
+
+<button
+class="info-btn"
+onclick="scrollToVideos()">
+
+Watch Videos
+
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- DETAILS -->
+
+<section class="section details-section">
+
+<div class="details-box">
+
+<h2>
+About This Memory ❤️
+</h2>
+
+<p>
+Our first real moment together.
+The nervous smiles.
+The awkward laughs.
+The beginning of everything beautiful between us.
+</p>
+
+<div class="memory-tags">
+
+<span>Romantic</span>
+
+<span>Beginning</span>
+
+<span>Special</span>
+
+<span>Forever</span>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- PHOTOS -->
+
+<section
+class="section"
+id="photos">
+
+<h2>
+Photos 📸
+</h2>
+
+<div class="netflix-row">
+
+<div
+class="card"
+onclick="openGallery([
+'../uploads/first-date/photo1.png',
+'../uploads/first-date/photo2.png'
+],0)">
+
+<img
+src="../uploads/first-date/photo1.png">
+
+<div class="card-overlay">
+
+<h3>
+First Smile ❤️
+</h3>
+
+<p>
+The moment everything started.
+</p>
+
+</div>
+
+</div>
+
+<div
+class="card"
+onclick="openGallery([
+'../uploads/first-date/photo1.png',
+'../uploads/first-date/photo2.png'
+],1)">
+
+<img
+src="../uploads/first-date/photo2.png">
+
+<div class="card-overlay">
+
+<h3>
+Together ✨
+</h3>
+
+<p>
+A memory frozen forever.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- VIDEOS -->
+
+<section
+class="section"
+id="videos">
+
+<h2>
+Videos 🎥
+</h2>
+
+<div class="video-grid">
+
+<video controls>
+
+<source
+src="../uploads/first-date/video1.mp4"
+type="video/mp4">
+
+</video>
+
+<video controls>
+
+<source
+src="../uploads/first-date/video2.mp4"
+type="video/mp4">
+
+</video>
+
+</div>
+
+</section>
+
+<!-- VIEWER -->
+
+<div
+class="viewer"
+id="viewer">
+
+<!-- CLOSE -->
+
+<span
+class="close"
+onclick="closeViewer()">
+
+×
+
+</span>
+
+<!-- LEFT -->
+
+<button
+class="viewer-btn left-btn"
+onclick="prevImage()">
+
+❮
+
+</button>
+
+<!-- CONTENT -->
+
+<div class="viewer-content">
+
+<img
+id="viewerImage"
+src="">
+
+<h2 id="viewerTitle">
+
+Beautiful Memory ❤️
+
+</h2>
+
+<p id="viewerText">
+
+A moment frozen forever.
+</p>
+
+</div>
+
+<!-- RIGHT -->
+
+<button
+class="viewer-btn right-btn"
+onclick="nextImage()">
+
+❯
+
+</button>
+
+<!-- COUNTER -->
+
+<div
+class="image-counter"
+id="imageCounter">
+
+1 / 1
+
+</div>
+
+</div>
+
+<script src="../js/app.js"></script>
+
+</body>
+</html>

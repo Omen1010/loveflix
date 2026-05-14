@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Trips ✈️</title>
+
+<link
+rel="stylesheet"
+href="../css/style.css">
+
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+
+<nav class="navbar">
+
+<div class="logo">
+LOVEFLIX
+</div>
+
+<div class="nav-right">
+
+<button
+class="nav-btn"
+onclick="goBack()">
+
+← Back
+
+</button>
+
+</div>
+
+</nav>
+
+<!-- HERO -->
+
+<section class="hero trips-hero">
+
+<div class="overlay"></div>
+
+<div class="hero-content">
+
+<h1>
+Trips ✈️
+</h1>
+
+<p>
+All the places we explored together.
+</p>
+
+</div>
+
+</section>
+
+<!-- PHOTOS -->
+
+<section class="section">
+
+<h2>
+Photos 📸
+</h2>
+
+<div class="cards">
+
+<div
+class="card"
+onclick="openViewer('../uploads/trips/photo1.png')">
+
+<img
+src="../uploads/trips/photo1.png">
+
+</div>
+
+<div
+class="card"
+onclick="openViewer('../uploads/trips/photo2.png')">
+
+<img
+src="../uploads/trips/photo2.png">
+
+</div>
+
+</div>
+
+</section>
+
+<!-- VIDEOS -->
+
+<section class="section">
+
+<h2>
+Videos 🎥
+</h2>
+
+<div class="video-grid">
+
+<video controls>
+
+<source
+src="../uploads/trips/video1.mp4"
+type="video/mp4">
+
+</video>
+
+<video controls>
+
+<source
+src="../uploads/trips/video2.mp4"
+type="video/mp4">
+
+</video>
+
+</div>
+
+</section>
+
+<!-- VIEWER -->
+
+<div
+class="viewer"
+id="viewer">
+
+<span
+class="close"
+onclick="closeViewer()">
+
+×
+
+</span>
+
+<img
+id="viewerImage"
+src="">
+
+</div>
+
+<script src="../js/app.js"></script>
+
+</body>
+</html>
