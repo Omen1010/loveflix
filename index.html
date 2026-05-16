@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LOVEFLIX ❤️</title>
-<!-- Fonts deferred so they don't block render -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="css/style.css">
@@ -25,17 +24,14 @@
   <div class="profile-screen-inner">
     <h1 class="profile-heading">Who's watching?</h1>
     <div class="profile-grid">
-
       <div class="profile-card" onclick="selectProfile('Omen')">
         <div class="profile-avatar avatar-omen">O</div>
         <span class="profile-name">Omen</span>
       </div>
-
       <div class="profile-card" onclick="selectProfile('Budhdhu')">
         <div class="profile-avatar avatar-budhdhu">B</div>
         <span class="profile-name">Budhdhu</span>
       </div>
-
       <div class="profile-card" onclick="selectProfile('Guest')">
         <div class="profile-avatar avatar-guest">
           <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
@@ -45,7 +41,6 @@
         </div>
         <span class="profile-name">Guest</span>
       </div>
-
     </div>
   </div>
 </div>
@@ -72,11 +67,7 @@
     <h2>Create New Memory ✨</h2>
     <input type="text" id="memoryTitle" placeholder="Memory Title">
     <textarea id="memoryDescription" placeholder="Memory Description"></textarea>
-    <input
-type="file"
-id="memoryImage"
-accept="image/*,video/*"
-multiple>
+    <input type="file" id="memoryImage" accept="image/*,video/*" multiple>
     <div class="creator-actions">
       <button onclick="createMemory()">Create</button>
       <button onclick="closeCreator()">Cancel</button>
@@ -132,7 +123,6 @@ multiple>
 
     <div class="hero-content">
       <h1>Our Story ❤️</h1>
-
       <div class="hero-stats">
         <div class="hero-stat">
           <span class="hero-stat-value" id="heroStatMemories">0</span>
@@ -147,9 +137,7 @@ multiple>
           <span class="hero-stat-label">Love</span>
         </div>
       </div>
-
       <p>Every memory. Every laugh. Every phase of us.</p>
-
       <div class="hero-buttons">
         <button class="play-btn hero-play" onclick="scrollToRows(); addHeroRipple(event)">
           <span class="hero-play-icon">▶</span>
@@ -170,7 +158,6 @@ multiple>
         <span class="badge-count" id="relDurationText">calculating...</span>
       </div>
     </div>
-    <!-- JS renders items here -->
     <div class="timeline" id="dynamicTimeline">
       <div class="timeline-cord">
         <div class="timeline-cord-track"></div>
@@ -247,7 +234,7 @@ multiple>
     <div class="netflix-row" id="topMemories"></div>
   </section>
 
-  <!-- MEMORY ROWS -->
+  <!-- MEMORY ROWS (grid) -->
   <div id="rows"></div>
 
 </section>
@@ -265,6 +252,9 @@ multiple>
   <button class="viewer-btn right-btn" onclick="nextImage()">❯</button>
   <div class="image-counter" id="imageCounter">1 / 1</div>
 </div>
+
+<!-- BACKGROUND UPLOAD QUEUE (JS populates) -->
+<div id="uploadQueue"></div>
 
 <script type="module" src="js/app.js"></script>
 </body>
