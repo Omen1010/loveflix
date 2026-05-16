@@ -18,6 +18,8 @@ href="css/style.css">
 </head>
 
 <body>
+  <div id="customCursor"></div>
+<div id="customCursorRing"></div>
 
 <!-- =====================
      NETFLIX INTRO SPLASH
@@ -240,127 +242,106 @@ style="display:none;">
 
 <!-- HERO -->
 
-<section
-class="hero home-hero">
-
-<div class="overlay"></div>
-
-<div class="hero-content">
-
-<h1>
-Our Story ❤️
-</h1>
-
-<p>
-Every memory.
-Every laugh.
-Every phase of us.
-</p>
-
-<div class="hero-buttons">
-
-<button
-class="play-btn"
-onclick="scrollToRows()">
-
-▶ Start Watching
-
-</button>
-
-</div>
-
-</div>
-
+<section class="hero home-hero">
+ 
+  <div class="overlay"></div>
+ 
+  <!-- floating particles -->
+  <div class="hero-particles" id="heroParticles"></div>
+ 
+  <!-- scrolling marquee at bottom of hero -->
+  <div class="hero-marquee-wrap">
+    <div class="hero-marquee" id="heroMarquee">
+      <span>Every moment</span><span class="dot">✦</span>
+      <span>Every laugh</span><span class="dot">✦</span>
+      <span>Every phase of us</span><span class="dot">✦</span>
+      <span>Still obsessed</span><span class="dot">✦</span>
+      <span>Still starving for you</span><span class="dot">✦</span>
+      <span>Dangerously attached</span><span class="dot">✦</span>
+      <span>Every moment</span><span class="dot">✦</span>
+      <span>Every laugh</span><span class="dot">✦</span>
+      <span>Every phase of us</span><span class="dot">✦</span>
+      <span>Still obsessed</span><span class="dot">✦</span>
+      <span>Still starving for you</span><span class="dot">✦</span>
+      <span>Dangerously attached</span><span class="dot">✦</span>
+    </div>
+  </div>
+ 
+  <div class="hero-content">
+ 
+    <h1>Our Story ❤️</h1>
+ 
+    <!-- stats bar -->
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-value" id="heroStatMemories">0</span>
+        <span class="hero-stat-label">Memories</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-value" id="heroStatMoments">2024</span>
+        <span class="hero-stat-label">Since</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-value">∞</span>
+        <span class="hero-stat-label">Love</span>
+      </div>
+    </div>
+ 
+    <p>
+      Every memory.
+      Every laugh.
+      Every phase of us.
+    </p>
+ 
+    <div class="hero-buttons">
+ 
+      <button
+        class="play-btn hero-play"
+        id="startWatchingBtn"
+        onclick="scrollToRows(); addHeroRipple(event)">
+        ▶ Start Watching
+      </button>
+ 
+    </div>
+ 
+  </div>
+ 
 </section>
-
 <!-- TIMELINE -->
 
+<!-- =====================
+     REPLACE YOUR ENTIRE TIMELINE SECTION
+     (from <section class="timeline-section"> to </section>)
+     with this block
+     ===================== -->
+
+<!-- TIMELINE -->
 <section class="timeline-section">
 
-<div class="timeline-progress"></div>
-
-<div class="timeline">
-
-<!-- ITEM 1 -->
-<div class="timeline-item" onclick="expandTimeline(this)" data-index="0">
-  <div class="timeline-dot"></div>
-  <div class="timeline-content">
-    <div class="timeline-year">2024</div>
-    <h3>We Found Trouble ❤️</h3>
-    <p>Two strangers becoming dangerously attached.
-    The beginning of an addiction neither of us wanted to escape.</p>
-    <div class="timeline-expand-card">
-      <p class="timeline-secret">You walked in and ruined every standard I ever had. Completely. Irreversibly. And I'd let you do it again.</p>
-      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(0)">💌 Unlock the secret</div>
+  <!-- Section header with live duration badge -->
+  <div class="timeline-section-header reveal-on-scroll">
+    <h2>Our Story So Far</h2>
+    <p>every chapter, in order</p>
+    <div class="rel-duration-badge">
+      <span class="badge-heart">❤</span>
+      <span class="badge-text">together for</span>
+      <span class="badge-count" id="relDurationText">calculating...</span>
     </div>
   </div>
-</div>
 
-<!-- ITEM 2 -->
-<div class="timeline-item" onclick="expandTimeline(this)" data-index="1">
-  <div class="timeline-dot"></div>
-  <div class="timeline-content">
-    <div class="timeline-year">2024</div>
-    <h3>The First Time We Met 🌙</h3>
-    <p>The nervous tension.
-    The first touch.
-    The first time wanting someone that intensely.</p>
-    <div class="timeline-expand-card">
-      <p class="timeline-secret">I remember thinking — this is going to be dangerous. And then choosing you anyway. Every single time after that.</p>
-      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(1)">💌 Unlock the secret</div>
+  <!-- Timeline container — items injected by JS -->
+  <div class="timeline" id="dynamicTimeline">
+
+    <!-- Animated cord -->
+    <div class="timeline-cord">
+      <div class="timeline-cord-track"></div>
+      <div class="timeline-cord-fill" id="timelineCordFill"></div>
+      <div class="timeline-cord-bead" id="timelineCordBead"></div>
     </div>
-  </div>
-</div>
 
-<!-- ITEM 3 -->
-<div class="timeline-item" onclick="expandTimeline(this)" data-index="2">
-  <div class="timeline-dot"></div>
-  <div class="timeline-content">
-    <div class="timeline-year">2025</div>
-    <h3>We Lost Ourselves In Each Other 🔥</h3>
-    <p>Late nights.
-    Messy emotions.
-    Rough love.
-    Soft moments after.</p>
-    <div class="timeline-expand-card">
-      <p class="timeline-secret">Late nights where I forgot where I ended and you began. Messy, tangled, completely lost in you — and it was the best kind of lost.</p>
-      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(2)">💌 Unlock the secret</div>
-    </div>
-  </div>
-</div>
+    <!-- JS will inject .timeline-item divs here -->
 
-<!-- ITEM 4 -->
-<div class="timeline-item" onclick="expandTimeline(this)" data-index="3">
-  <div class="timeline-dot"></div>
-  <div class="timeline-content">
-    <div class="timeline-year">2026</div>
-    <h3>Still Starving For You ❤️</h3>
-    <p>Still obsessed.
-    Still attached.
-    Still wanting you in every possible way.</p>
-    <div class="timeline-expand-card">
-      <p class="timeline-secret">Two years and I still reach for you first. In the dark. In the noise. In every quiet moment that belongs only to us.</p>
-      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(3)">💌 Unlock the secret</div>
-    </div>
   </div>
-</div>
-
-<!-- ITEM 5 -->
-<div class="timeline-item" onclick="expandTimeline(this)" data-index="4">
-  <div class="timeline-dot"></div>
-  <div class="timeline-content">
-    <div class="timeline-year">2026</div>
-    <h3>Happy Birthday, Baby 🎂</h3>
-    <p>Two years later —
-    and somehow the craving only got worse.</p>
-    <div class="timeline-expand-card">
-      <p class="timeline-secret">Happy birthday to the person who made me believe that some addictions are worth keeping. I'd choose this chaos — with you — every time.</p>
-      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(4)">💌 Unlock the secret</div>
-    </div>
-  </div>
-</div>
-
-</div>
 
 </section>
 
@@ -368,6 +349,60 @@ onclick="scrollToRows()">
 <div id="timelineGameModal" class="timeline-game-modal">
   <div class="tgm-box">
     <div id="tgmContent"></div>
+  </div>
+</div>
+
+<!-- BORED SECTION -->
+<section class="bored-section reveal-on-scroll">
+ 
+  <div class="bored-header">
+    <h2>Bored? it's fine — I still got you ❤️</h2>
+    <p>small silly games, just for us</p>
+  </div>
+ 
+  <div class="games-grid">
+ 
+    <!-- Love Meter -->
+    <div class="game-card reveal-on-scroll" onclick="openGame('lovemeter')">
+      <span class="game-card-icon">💘</span>
+      <h3>Love Meter</h3>
+      <p>How strong is this thing we have? Let the universe decide.</p>
+      <div class="game-play-btn">Play ✦</div>
+    </div>
+ 
+    <!-- Memory Match -->
+    <div class="game-card reveal-on-scroll" onclick="openGame('match')">
+      <span class="game-card-icon">🃏</span>
+      <h3>Memory Match</h3>
+      <p>Flip the cards. Find the pairs. Remember why you like chaos.</p>
+      <div class="game-play-btn">Play ✦</div>
+    </div>
+ 
+    <!-- Truth Bomb -->
+    <div class="game-card reveal-on-scroll" onclick="openGame('truth')">
+      <span class="game-card-icon">💣</span>
+      <h3>Truth Bomb</h3>
+      <p>Honest questions. No escaping. Answer if you dare, baby.</p>
+      <div class="game-play-btn">Play ✦</div>
+    </div>
+ 
+    <!-- Would You Rather -->
+    <div class="game-card reveal-on-scroll" onclick="openGame('wyr')">
+      <span class="game-card-icon">🔥</span>
+      <h3>Would You Rather</h3>
+      <p>Impossible choices. Wrong answers only. This is us.</p>
+      <div class="game-play-btn">Play ✦</div>
+    </div>
+ 
+  </div>
+ 
+</section>
+ 
+<!-- GAME MODAL -->
+<div class="game-modal" id="gameModal">
+  <div class="game-modal-box" id="gameModalBox">
+    <button class="game-modal-close" onclick="closeGame()">×</button>
+    <div id="gameContent"></div>
   </div>
 </div>
 
