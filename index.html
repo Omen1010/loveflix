@@ -72,7 +72,11 @@
     <h2>Create New Memory ✨</h2>
     <input type="text" id="memoryTitle" placeholder="Memory Title">
     <textarea id="memoryDescription" placeholder="Memory Description"></textarea>
-    <input type="file" id="memoryImage" accept="image/*,video/*">
+    <input
+type="file"
+id="memoryImage"
+accept="image/*,video/*"
+multiple>
     <div class="creator-actions">
       <button onclick="createMemory()">Create</button>
       <button onclick="closeCreator()">Cancel</button>
