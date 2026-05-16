@@ -564,6 +564,7 @@ window.editMemory = async function(id){
    ADD MEDIA (image or video)
 ========================= */
 window.addMediaToMemory = function(){
+
   if(!currentMemory) return;
 
   const input = document.createElement("input");
@@ -571,26 +572,43 @@ window.addMediaToMemory = function(){
   input.accept = "image/*,video/*";
 
   input.onchange = async () => {
+
     const file = input.files[0];
     if(!file) return;
+
+    // 100MB hard cap to avoid silent Cloudinary rejects on big phone videos
+    if(file.size > 100 * 1024 * 1024){
+      alert("File too big ❤️ (max 100MB). Try a shorter clip.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "loveflix_uploads");
 
-    const isVideo = file.type.startsWith("video/");
-    const endpoint = isVideo ? "video" : "image";
-
     try{
+      // /auto/ lets Cloudinary decide image vs video — works for both
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/demdwlyct/${endpoint}/upload`,
+        `https://api.cloudinary.com/v1_1/demdwlyct/auto/upload`,
         { method: "POST", body: formData }
       );
       const data = await res.json();
-      const url = data.secure_url;
 
-      const updatedImages = isVideo ? currentMemory.images : [...currentMemory.images, url];
-      const updatedVideos = isVideo ? [...(currentMemory.videos||[]), url] : (currentMemory.videos||[]);
+      if(!res.ok || !data.secure_url){
+        console.log("Cloudinary error:", data);
+        alert("Upload failed ❤️ — " + (data.error?.message || "unknown error"));
+        return;
+      }
+
+      const url = data.secure_url;
+      const isVideo = data.resource_type === "video";
+
+      const updatedImages = isVideo
+        ? currentMemory.images
+        : [...currentMemory.images, url];
+      const updatedVideos = isVideo
+        ? [...(currentMemory.videos||[]), url]
+        : (currentMemory.videos||[]);
 
       await updateDoc(doc(db, "memories", currentMemory.docId), {
         images: updatedImages,
@@ -600,14 +618,16 @@ window.addMediaToMemory = function(){
       await loadMemories();
       currentMemory = memories.find(m => m.id === currentMemory.id);
       renderMemory(currentMemory);
+
     }catch(error){
       console.log(error);
-      alert("Upload failed ❤️");
+      alert("Upload failed ❤️ — " + error.message);
     }
   };
 
   input.click();
-}
+};
+
 
 /* =========================
    DELETE IMAGE FROM MEMORY
