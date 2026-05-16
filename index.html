@@ -1,38 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LOVEFLIX ❤️</title>
-
-<link
-rel="stylesheet"
-href="css/style.css">
-
+<!-- Fonts deferred so they don't block render -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" media="print" onload="this.media='all'">
 </head>
-
 <body>
-  <div id="customCursor"></div>
+
+<div id="customCursor"></div>
 <div id="customCursorRing"></div>
 
-<!-- =====================
-     NETFLIX INTRO SPLASH
-     ===================== -->
-
+<!-- NETFLIX INTRO SPLASH -->
 <div id="netflixSplash" class="netflix-splash">
   <div class="splash-logo">LOVEFLIX</div>
 </div>
 
-<!-- =====================
-     PROFILE PICKER
-     ===================== -->
-
+<!-- PROFILE PICKER -->
 <div id="profileScreen" class="profile-screen" style="display:none;">
   <div class="profile-screen-inner">
     <h1 class="profile-heading">Who's watching?</h1>
@@ -50,7 +38,7 @@ href="css/style.css">
 
       <div class="profile-card" onclick="selectProfile('Guest')">
         <div class="profile-avatar avatar-guest">
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
             <circle cx="22" cy="17" r="8" fill="rgba(255,255,255,0.5)"/>
             <ellipse cx="22" cy="36" rx="14" ry="8" fill="rgba(255,255,255,0.5)"/>
           </svg>
@@ -63,464 +51,217 @@ href="css/style.css">
 </div>
 
 <!-- SECRET TRIGGER -->
-
-<div
-class="secret-trigger"
-onclick="secretTap()">
-
-🌙
-
-</div>
+<div class="secret-trigger" onclick="secretTap()">🌙</div>
 
 <!-- NAVBAR -->
-
-<nav class="navbar" id="navbar" style="opacity:0; pointer-events:none;">
-
-  <div
-  class="logo"
-  onclick="showHome()">
-
-  LOVEFLIX
-
-  </div>
-
-  <div class="nav-right" style="display:flex; align-items:center; gap:14px;">
-
+<nav class="navbar" id="navbar" style="opacity:0;pointer-events:none;">
+  <div class="logo" onclick="showHome()">LOVEFLIX</div>
+  <div class="nav-right">
     <span id="profileBadge" class="profile-badge"></span>
-
-    <button
-    class="nav-btn"
-    id="privateVaultBtn"
-    onclick="showPrivate()">
-
-    Private Vault 🔒
-
-    </button>
-
-    <button
-    class="nav-btn nav-btn-ghost"
-    onclick="switchProfile()">
-
-    Switch
-
-    </button>
-
+    <button class="nav-btn" id="privateVaultBtn" onclick="showPrivate()">Private Vault 🔒</button>
+    <button class="nav-btn nav-btn-ghost" onclick="switchProfile()">Switch</button>
   </div>
-
 </nav>
 
 <!-- CREATE MEMORY -->
-
-<button
-class="create-memory-btn"
-onclick="openCreator()">
-
-＋ Create Memory
-
-</button>
+<button class="create-memory-btn" onclick="openCreator()">＋ Create Memory</button>
 
 <!-- CREATOR PANEL -->
-
-<div
-class="creator-panel"
-id="creatorPanel">
-
-<div class="creator-box">
-
-<h2>
-Create New Memory ✨
-</h2>
-
-<input
-type="text"
-id="memoryTitle"
-placeholder="Memory Title">
-
-<textarea
-id="memoryDescription"
-placeholder="Memory Description"></textarea>
-
-<input
-type="file"
-id="memoryImage"
-accept="image/*,video/*">
-
-<div class="creator-actions">
-
-<button
-onclick="createMemory()">
-
-Create
-
-</button>
-
-<button
-onclick="closeCreator()">
-
-Cancel
-
-</button>
-
-</div>
-
-</div>
-
+<div class="creator-panel" id="creatorPanel">
+  <div class="creator-box">
+    <h2>Create New Memory ✨</h2>
+    <input type="text" id="memoryTitle" placeholder="Memory Title">
+    <textarea id="memoryDescription" placeholder="Memory Description"></textarea>
+    <input type="file" id="memoryImage" accept="image/*,video/*">
+    <div class="creator-actions">
+      <button onclick="createMemory()">Create</button>
+      <button onclick="closeCreator()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- PASSWORD SCREEN -->
-
-<div
-class="password-screen"
-id="passwordScreen">
-
-<div class="password-box">
-
-<h1>
-Private Vault 🔒
-</h1>
-
-<input
-type="password"
-id="passwordInput"
-placeholder="Enter Password">
-
-<div class="password-buttons">
-
-<button
-onclick="unlockPrivate()">
-
-Unlock
-
-</button>
-
-<button
-onclick="closePasswordScreen()">
-
-Cancel
-
-</button>
-
-</div>
-
-</div>
-
+<div class="password-screen" id="passwordScreen">
+  <div class="password-box">
+    <h1>Private Vault 🔒</h1>
+    <input type="password" id="passwordInput" placeholder="Enter Password">
+    <div class="password-buttons">
+      <button onclick="unlockPrivate()">Unlock</button>
+      <button onclick="closePasswordScreen()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- SECRET MEMORY -->
-
-<div
-class="secret-memory"
-id="secretMemory">
-
-<div class="secret-content">
-
-<h1>
-Only Us ❤️
-</h1>
-
-<p>
-Some memories were never meant for the world.
-</p>
-
-<button
-class="play-btn"
-onclick="closeSecretMemory()">
-
-Close
-
-</button>
-
-</div>
-
+<div class="secret-memory" id="secretMemory">
+  <div class="secret-content">
+    <h1>Only Us ❤️</h1>
+    <p>Some memories were never meant for the world.</p>
+    <button class="play-btn" onclick="closeSecretMemory()">Close</button>
+  </div>
 </div>
 
 <!-- HOME SCREEN -->
+<section id="homeScreen" style="display:none;">
 
-<section
-id="homeScreen"
-style="display:none;">
+  <!-- HERO -->
+  <section class="hero home-hero">
+    <div class="overlay"></div>
+    <div class="hero-particles" id="heroParticles"></div>
 
-<!-- HERO -->
-
-<section class="hero home-hero">
- 
-  <div class="overlay"></div>
- 
-  <!-- floating particles -->
-  <div class="hero-particles" id="heroParticles"></div>
- 
-  <!-- scrolling marquee at bottom of hero -->
-  <div class="hero-marquee-wrap">
-    <div class="hero-marquee" id="heroMarquee">
-      <span>Every moment</span><span class="dot">✦</span>
-      <span>Every laugh</span><span class="dot">✦</span>
-      <span>Every phase of us</span><span class="dot">✦</span>
-      <span>Still obsessed</span><span class="dot">✦</span>
-      <span>Still starving for you</span><span class="dot">✦</span>
-      <span>Dangerously attached</span><span class="dot">✦</span>
-      <span>Every moment</span><span class="dot">✦</span>
-      <span>Every laugh</span><span class="dot">✦</span>
-      <span>Every phase of us</span><span class="dot">✦</span>
-      <span>Still obsessed</span><span class="dot">✦</span>
-      <span>Still starving for you</span><span class="dot">✦</span>
-      <span>Dangerously attached</span><span class="dot">✦</span>
-    </div>
-  </div>
- 
-  <div class="hero-content">
- 
-    <h1>Our Story ❤️</h1>
- 
-    <!-- stats bar -->
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <span class="hero-stat-value" id="heroStatMemories">0</span>
-        <span class="hero-stat-label">Memories</span>
-      </div>
-      <div class="hero-stat">
-        <span class="hero-stat-value" id="heroStatMoments">2024</span>
-        <span class="hero-stat-label">Since</span>
-      </div>
-      <div class="hero-stat">
-        <span class="hero-stat-value">∞</span>
-        <span class="hero-stat-label">Love</span>
+    <div class="hero-marquee-wrap">
+      <div class="hero-marquee">
+        <span>Every moment</span><span class="dot">✦</span>
+        <span>Every laugh</span><span class="dot">✦</span>
+        <span>Every phase of us</span><span class="dot">✦</span>
+        <span>Still obsessed</span><span class="dot">✦</span>
+        <span>Still starving for you</span><span class="dot">✦</span>
+        <span>Dangerously attached</span><span class="dot">✦</span>
+        <span>Every moment</span><span class="dot">✦</span>
+        <span>Every laugh</span><span class="dot">✦</span>
+        <span>Every phase of us</span><span class="dot">✦</span>
+        <span>Still obsessed</span><span class="dot">✦</span>
+        <span>Still starving for you</span><span class="dot">✦</span>
+        <span>Dangerously attached</span><span class="dot">✦</span>
       </div>
     </div>
- 
-    <p>
-      Every memory.
-      Every laugh.
-      Every phase of us.
-    </p>
- 
-    <div class="hero-buttons">
- 
-      <button
-        class="play-btn hero-play"
-        id="startWatchingBtn"
-        onclick="scrollToRows(); addHeroRipple(event)">
-        ▶ Start Watching
-      </button>
- 
+
+    <div class="hero-content">
+      <h1>Our Story ❤️</h1>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-value" id="heroStatMemories">0</span>
+          <span class="hero-stat-label">Memories</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">2024</span>
+          <span class="hero-stat-label">Since</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">∞</span>
+          <span class="hero-stat-label">Love</span>
+        </div>
+      </div>
+
+      <p>Every memory. Every laugh. Every phase of us.</p>
+
+      <div class="hero-buttons">
+        <button class="play-btn hero-play" onclick="scrollToRows(); addHeroRipple(event)">
+          <span class="hero-play-icon">▶</span>
+          <span>Start Watching</span>
+        </button>
+      </div>
     </div>
- 
-  </div>
- 
-</section>
-<!-- TIMELINE -->
+  </section>
 
-<!-- =====================
-     REPLACE YOUR ENTIRE TIMELINE SECTION
-     (from <section class="timeline-section"> to </section>)
-     with this block
-     ===================== -->
+  <!-- TIMELINE -->
+  <section class="timeline-section">
+    <div class="timeline-section-header reveal-on-scroll">
+      <h2>Our Story So Far</h2>
+      <p>every chapter, in order</p>
+      <div class="rel-duration-badge">
+        <span class="badge-heart">❤</span>
+        <span class="badge-text">together for</span>
+        <span class="badge-count" id="relDurationText">calculating...</span>
+      </div>
+    </div>
+    <!-- JS renders items here -->
+    <div class="timeline" id="dynamicTimeline">
+      <div class="timeline-cord">
+        <div class="timeline-cord-track"></div>
+        <div class="timeline-cord-fill" id="timelineCordFill"></div>
+        <div class="timeline-cord-bead" id="timelineCordBead"></div>
+      </div>
+    </div>
+  </section>
 
-<!-- TIMELINE -->
-<section class="timeline-section">
-
-  <!-- Section header with live duration badge -->
-  <div class="timeline-section-header reveal-on-scroll">
-    <h2>Our Story So Far</h2>
-    <p>every chapter, in order</p>
-    <div class="rel-duration-badge">
-      <span class="badge-heart">❤</span>
-      <span class="badge-text">together for</span>
-      <span class="badge-count" id="relDurationText">calculating...</span>
+  <!-- TIMELINE GAME MODAL -->
+  <div id="timelineGameModal" class="timeline-game-modal">
+    <div class="tgm-box">
+      <div id="tgmContent"></div>
     </div>
   </div>
 
-  <!-- Timeline container — items injected by JS -->
-  <div class="timeline" id="dynamicTimeline">
-
-    <!-- Animated cord -->
-    <div class="timeline-cord">
-      <div class="timeline-cord-track"></div>
-      <div class="timeline-cord-fill" id="timelineCordFill"></div>
-      <div class="timeline-cord-bead" id="timelineCordBead"></div>
+  <!-- BORED SECTION -->
+  <section class="bored-section reveal-on-scroll">
+    <div class="bored-header">
+      <h2>Bored? I still got you ❤️</h2>
+      <p>small silly games, just for us</p>
     </div>
+    <div class="games-grid">
+      <div class="game-card reveal-on-scroll" onclick="openGame('lovemeter')">
+        <span class="game-card-icon">💘</span>
+        <h3>Love Meter</h3>
+        <p>Let the universe decide what we already know.</p>
+        <div class="game-play-btn">Play ✦</div>
+      </div>
+      <div class="game-card reveal-on-scroll" onclick="openGame('match')">
+        <span class="game-card-icon">🃏</span>
+        <h3>Memory Match</h3>
+        <p>Flip the cards. Find the pairs. Remember why you like chaos.</p>
+        <div class="game-play-btn">Play ✦</div>
+      </div>
+      <div class="game-card reveal-on-scroll" onclick="openGame('truth')">
+        <span class="game-card-icon">💣</span>
+        <h3>Truth Bomb</h3>
+        <p>Honest questions. No escaping. Answer if you dare, baby.</p>
+        <div class="game-play-btn">Play ✦</div>
+      </div>
+      <div class="game-card reveal-on-scroll" onclick="openGame('wyr')">
+        <span class="game-card-icon">🔥</span>
+        <h3>Would You Rather</h3>
+        <p>Impossible choices. Wrong answers only. This is us.</p>
+        <div class="game-play-btn">Play ✦</div>
+      </div>
+    </div>
+  </section>
 
-    <!-- JS will inject .timeline-item divs here -->
-
+  <!-- GAME MODAL -->
+  <div class="game-modal" id="gameModal">
+    <div class="game-modal-box" id="gameModalBox">
+      <button class="game-modal-close" onclick="closeGame()">×</button>
+      <div id="gameContent"></div>
+    </div>
   </div>
 
-</section>
+  <!-- CONTINUE WATCHING -->
+  <section class="section">
+    <h2>Continue Watching ❤️</h2>
+    <div class="netflix-row" id="continueWatching"></div>
+  </section>
 
-<!-- TIMELINE GAME MODAL -->
-<div id="timelineGameModal" class="timeline-game-modal">
-  <div class="tgm-box">
-    <div id="tgmContent"></div>
-  </div>
-</div>
+  <!-- FAVORITES -->
+  <section class="section">
+    <h2>Favorite Memories ❤️</h2>
+    <div class="netflix-row" id="favoriteRows"></div>
+  </section>
 
-<!-- BORED SECTION -->
-<section class="bored-section reveal-on-scroll">
- 
-  <div class="bored-header">
-    <h2>Bored? it's fine — I still got you ❤️</h2>
-    <p>small silly games, just for us</p>
-  </div>
- 
-  <div class="games-grid">
- 
-    <!-- Love Meter -->
-    <div class="game-card reveal-on-scroll" onclick="openGame('lovemeter')">
-      <span class="game-card-icon">💘</span>
-      <h3>Love Meter</h3>
-      <p>How strong is this thing we have? Let the universe decide.</p>
-      <div class="game-play-btn">Play ✦</div>
-    </div>
- 
-    <!-- Memory Match -->
-    <div class="game-card reveal-on-scroll" onclick="openGame('match')">
-      <span class="game-card-icon">🃏</span>
-      <h3>Memory Match</h3>
-      <p>Flip the cards. Find the pairs. Remember why you like chaos.</p>
-      <div class="game-play-btn">Play ✦</div>
-    </div>
- 
-    <!-- Truth Bomb -->
-    <div class="game-card reveal-on-scroll" onclick="openGame('truth')">
-      <span class="game-card-icon">💣</span>
-      <h3>Truth Bomb</h3>
-      <p>Honest questions. No escaping. Answer if you dare, baby.</p>
-      <div class="game-play-btn">Play ✦</div>
-    </div>
- 
-    <!-- Would You Rather -->
-    <div class="game-card reveal-on-scroll" onclick="openGame('wyr')">
-      <span class="game-card-icon">🔥</span>
-      <h3>Would You Rather</h3>
-      <p>Impossible choices. Wrong answers only. This is us.</p>
-      <div class="game-play-btn">Play ✦</div>
-    </div>
- 
-  </div>
- 
-</section>
- 
-<!-- GAME MODAL -->
-<div class="game-modal" id="gameModal">
-  <div class="game-modal-box" id="gameModalBox">
-    <button class="game-modal-close" onclick="closeGame()">×</button>
-    <div id="gameContent"></div>
-  </div>
-</div>
+  <!-- TOP MEMORIES -->
+  <section class="section">
+    <h2>Most Replayed Memories 🔥</h2>
+    <div class="netflix-row" id="topMemories"></div>
+  </section>
 
-<!-- CONTINUE WATCHING -->
-
-<section class="section">
-
-<h2>
-Continue Watching ❤️
-</h2>
-
-<div
-class="netflix-row"
-id="continueWatching">
-
-</div>
-
-</section>
-
-<!-- FAVORITES -->
-
-<section class="section">
-
-<h2>
-Favorite Memories ❤️
-</h2>
-
-<div
-class="netflix-row"
-id="favoriteRows">
-
-</div>
-
-</section>
-
-<!-- TOP MEMORIES -->
-
-<section class="section">
-
-<h2>
-Most Replayed Memories 🔥
-</h2>
-
-<div
-class="netflix-row"
-id="topMemories">
-
-</div>
-
-</section>
-
-<!-- MEMORY ROWS -->
-
-<div id="rows"></div>
+  <!-- MEMORY ROWS -->
+  <div id="rows"></div>
 
 </section>
 
 <!-- MEMORY SCREEN -->
-
-<section
-id="memoryScreen"
-style="display:none;">
-
-<div id="memoryContent"></div>
-
+<section id="memoryScreen" style="display:none;">
+  <div id="memoryContent"></div>
 </section>
 
 <!-- VIEWER -->
-
-<div
-class="viewer"
-id="viewer">
-
-<span
-class="close"
-onclick="closeViewer()">
-
-×
-
-</span>
-
-<button
-class="viewer-btn left-btn"
-onclick="prevImage()">
-
-❮
-
-</button>
-
-<img
-id="viewerImage"
-src="">
-
-<button
-class="viewer-btn right-btn"
-onclick="nextImage()">
-
-❯
-
-</button>
-
-<div
-class="image-counter"
-id="imageCounter">
-
-1 / 1
-
+<div class="viewer" id="viewer">
+  <span class="close" onclick="closeViewer()">×</span>
+  <button class="viewer-btn left-btn" onclick="prevImage()">❮</button>
+  <img id="viewerImage" src="" alt="">
+  <button class="viewer-btn right-btn" onclick="nextImage()">❯</button>
+  <div class="image-counter" id="imageCounter">1 / 1</div>
 </div>
 
-</div>
-
-<!-- APP -->
-
-<script
-type="module"
-src="js/app.js">
-
-</script>
-
+<script type="module" src="js/app.js"></script>
 </body>
 </html>
