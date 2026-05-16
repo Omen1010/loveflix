@@ -2112,7 +2112,7 @@ function buildMilestones(){
   // ─── BIRTHDAY MILESTONE (Budhdhu's birthday) ──────────────
   // Adjust this date to her actual birthday
   // This adds every year automatically
-  const BIRTHDAY_MONTH = 9; // September = 9 (0-indexed)
+  const BIRTHDAY_MONTH = 8; // September = 8 (0-indexed)
   const BIRTHDAY_DAY = 23;  // ← CHANGE THIS to her actual birthday day
 
   const now = new Date();
