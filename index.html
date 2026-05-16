@@ -19,6 +19,47 @@ href="css/style.css">
 
 <body>
 
+<!-- =====================
+     NETFLIX INTRO SPLASH
+     ===================== -->
+
+<div id="netflixSplash" class="netflix-splash">
+  <div class="splash-logo">LOVEFLIX</div>
+</div>
+
+<!-- =====================
+     PROFILE PICKER
+     ===================== -->
+
+<div id="profileScreen" class="profile-screen" style="display:none;">
+  <div class="profile-screen-inner">
+    <h1 class="profile-heading">Who's watching?</h1>
+    <div class="profile-grid">
+
+      <div class="profile-card" onclick="selectProfile('Omen')">
+        <div class="profile-avatar avatar-omen">O</div>
+        <span class="profile-name">Omen</span>
+      </div>
+
+      <div class="profile-card" onclick="selectProfile('Budhdhu')">
+        <div class="profile-avatar avatar-budhdhu">B</div>
+        <span class="profile-name">Budhdhu</span>
+      </div>
+
+      <div class="profile-card" onclick="selectProfile('Guest')">
+        <div class="profile-avatar avatar-guest">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="22" cy="17" r="8" fill="rgba(255,255,255,0.5)"/>
+            <ellipse cx="22" cy="36" rx="14" ry="8" fill="rgba(255,255,255,0.5)"/>
+          </svg>
+        </div>
+        <span class="profile-name">Guest</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- SECRET TRIGGER -->
 
 <div
@@ -31,28 +72,38 @@ onclick="secretTap()">
 
 <!-- NAVBAR -->
 
-<nav class="navbar">
+<nav class="navbar" id="navbar" style="opacity:0; pointer-events:none;">
 
-<div
-class="logo"
-onclick="showHome()">
+  <div
+  class="logo"
+  onclick="showHome()">
 
-LOVEFLIX
+  LOVEFLIX
 
-</div>
+  </div>
 
-<div
-class="nav-right">
+  <div class="nav-right" style="display:flex; align-items:center; gap:14px;">
 
-<button
-class="nav-btn"
-onclick="showPrivate()">
+    <span id="profileBadge" class="profile-badge"></span>
 
-Private Vault 🔒
+    <button
+    class="nav-btn"
+    id="privateVaultBtn"
+    onclick="showPrivate()">
 
-</button>
+    Private Vault 🔒
 
-</div>
+    </button>
+
+    <button
+    class="nav-btn nav-btn-ghost"
+    onclick="switchProfile()">
+
+    Switch
+
+    </button>
+
+  </div>
 
 </nav>
 
@@ -184,7 +235,8 @@ Close
 <!-- HOME SCREEN -->
 
 <section
-id="homeScreen">
+id="homeScreen"
+style="display:none;">
 
 <!-- HERO -->
 
@@ -229,149 +281,95 @@ onclick="scrollToRows()">
 
 <div class="timeline">
 
-<!-- ITEM -->
-
-<div class="timeline-item">
-
-<div class="timeline-dot"></div>
-
-<div class="timeline-content">
-
-<div class="timeline-year">
-
-2024
-
+<!-- ITEM 1 -->
+<div class="timeline-item" onclick="expandTimeline(this)" data-index="0">
+  <div class="timeline-dot"></div>
+  <div class="timeline-content">
+    <div class="timeline-year">2024</div>
+    <h3>We Found Trouble ❤️</h3>
+    <p>Two strangers becoming dangerously attached.
+    The beginning of an addiction neither of us wanted to escape.</p>
+    <div class="timeline-expand-card">
+      <p class="timeline-secret">You walked in and ruined every standard I ever had. Completely. Irreversibly. And I'd let you do it again.</p>
+      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(0)">💌 Unlock the secret</div>
+    </div>
+  </div>
 </div>
 
-<h3>
-We Found Trouble ❤️
-</h3>
-
-<p>
-Two strangers becoming dangerously attached.
-The beginning of an addiction neither of us wanted to escape.
-</p>
-
+<!-- ITEM 2 -->
+<div class="timeline-item" onclick="expandTimeline(this)" data-index="1">
+  <div class="timeline-dot"></div>
+  <div class="timeline-content">
+    <div class="timeline-year">2024</div>
+    <h3>The First Time We Met 🌙</h3>
+    <p>The nervous tension.
+    The first touch.
+    The first time wanting someone that intensely.</p>
+    <div class="timeline-expand-card">
+      <p class="timeline-secret">I remember thinking — this is going to be dangerous. And then choosing you anyway. Every single time after that.</p>
+      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(1)">💌 Unlock the secret</div>
+    </div>
+  </div>
 </div>
 
+<!-- ITEM 3 -->
+<div class="timeline-item" onclick="expandTimeline(this)" data-index="2">
+  <div class="timeline-dot"></div>
+  <div class="timeline-content">
+    <div class="timeline-year">2025</div>
+    <h3>We Lost Ourselves In Each Other 🔥</h3>
+    <p>Late nights.
+    Messy emotions.
+    Rough love.
+    Soft moments after.</p>
+    <div class="timeline-expand-card">
+      <p class="timeline-secret">Late nights where I forgot where I ended and you began. Messy, tangled, completely lost in you — and it was the best kind of lost.</p>
+      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(2)">💌 Unlock the secret</div>
+    </div>
+  </div>
 </div>
 
-<!-- ITEM -->
-
-<div class="timeline-item">
-
-<div class="timeline-dot"></div>
-
-<div class="timeline-content">
-
-<div class="timeline-year">
-
-2024
-
+<!-- ITEM 4 -->
+<div class="timeline-item" onclick="expandTimeline(this)" data-index="3">
+  <div class="timeline-dot"></div>
+  <div class="timeline-content">
+    <div class="timeline-year">2026</div>
+    <h3>Still Starving For You ❤️</h3>
+    <p>Still obsessed.
+    Still attached.
+    Still wanting you in every possible way.</p>
+    <div class="timeline-expand-card">
+      <p class="timeline-secret">Two years and I still reach for you first. In the dark. In the noise. In every quiet moment that belongs only to us.</p>
+      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(3)">💌 Unlock the secret</div>
+    </div>
+  </div>
 </div>
 
-<h3>
-The First Time We Met 🌙
-</h3>
-
-<p>
-The nervous tension.
-The first touch.
-The first time wanting someone that intensely.
-</p>
-
-</div>
-
-</div>
-
-<!-- ITEM -->
-
-<div class="timeline-item">
-
-<div class="timeline-dot"></div>
-
-<div class="timeline-content">
-
-<div class="timeline-year">
-
-2025
-
-</div>
-
-<h3>
-We Lost Ourselves In Each Other 🔥
-</h3>
-
-<p>
-Late nights.
-Messy emotions.
-Rough love.
-Soft moments after.
-A thousand unforgettable memories tangled together.
-</p>
-
-</div>
-
-</div>
-
-<!-- ITEM -->
-
-<div class="timeline-item">
-
-<div class="timeline-dot"></div>
-
-<div class="timeline-content">
-
-<div class="timeline-year">
-
-2026
-
-</div>
-
-<h3>
-Still Starving For You ❤️
-</h3>
-
-<p>
-Still obsessed.
-Still attached.
-Still wanting you in every possible way.
-</p>
-
-</div>
-
-</div>
-
-<!-- ITEM -->
-
-<div class="timeline-item">
-
-<div class="timeline-dot"></div>
-
-<div class="timeline-content">
-
-<div class="timeline-year">
-
-2026
-
-</div>
-
-<h3>
-Happy Birthday, Baby 🎂
-</h3>
-
-<p>
-Two years later —
-and somehow the craving only got worse.
-</p>
-
-</div>
-
+<!-- ITEM 5 -->
+<div class="timeline-item" onclick="expandTimeline(this)" data-index="4">
+  <div class="timeline-dot"></div>
+  <div class="timeline-content">
+    <div class="timeline-year">2026</div>
+    <h3>Happy Birthday, Baby 🎂</h3>
+    <p>Two years later —
+    and somehow the craving only got worse.</p>
+    <div class="timeline-expand-card">
+      <p class="timeline-secret">Happy birthday to the person who made me believe that some addictions are worth keeping. I'd choose this chaos — with you — every time.</p>
+      <div class="timeline-game-btn" onclick="event.stopPropagation(); startTimelineGame(4)">💌 Unlock the secret</div>
+    </div>
+  </div>
 </div>
 
 </div>
 
 </section>
+
+<!-- TIMELINE GAME MODAL -->
+<div id="timelineGameModal" class="timeline-game-modal">
+  <div class="tgm-box">
+    <div id="tgmContent"></div>
+  </div>
+</div>
 
 <!-- CONTINUE WATCHING -->
 
