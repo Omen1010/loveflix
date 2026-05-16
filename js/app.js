@@ -1384,3 +1384,1046 @@ window.chooseWyr = function(el,c){
   if(next) next.classList.add("visible");
 };
 window.nextWyr = function(){ _wyrIdx=(_wyrIdx+1)%wyrQs.length; if(window._wyrEl) renderWyrQ(window._wyrEl); };
+/* ================================================
+   LOVEFLIX — JS PATCH
+   Paste this at the very BOTTOM of app.js
+   (after the last window.nextWyr line)
+   ================================================ */
+
+/* ================================================
+   PERFORMANCE: reduce splash wait
+   Override the 3100ms splash to 2000ms
+   (the CSS animation ends at 2.4s + 0.6s fade = 3s,
+    we just hide it sooner since fade handles visuals)
+   ================================================ */
+
+/* We can't easily override the DOMContentLoaded timeout inline,
+   but we CAN hide the splash sooner via CSS injection */
+(function reduceSplash(){
+  if(!document.getElementById("splashSpeedStyle")){
+    const s = document.createElement("style");
+    s.id = "splashSpeedStyle";
+    /* Make the splash fade out at 1.8s instead of 2.4s */
+    s.textContent = `
+      .netflix-splash {
+        animation: splashFadeOut 0.5s ease 1.9s forwards !important;
+      }
+    `;
+    document.head.appendChild(s);
+  }
+})();
+
+/* ================================================
+   PERFORMANCE: reduce particle count to 8, slower interval
+   Override initParticles from app.js
+   (safe: function re-runs after DOM, particles container starts empty)
+================================================ */
+(function patchParticles(){
+  /* Wait for DOM then replace particle system with lighter version */
+  window.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+      const container = document.getElementById("heroParticles");
+      if(!container) return;
+      /* Clear existing and restart with fewer particles */
+      container.innerHTML = "";
+
+      const spawn = () => {
+        /* Max 8 particles at once */
+        if(container.children.length >= 8) return;
+        const p = document.createElement("div");
+        p.className = "hero-particle";
+        const size = 2 + Math.random() * 3;
+        const dur  = 10 + Math.random() * 8;
+        p.style.cssText = `
+          width:${size}px;
+          height:${size}px;
+          left:${Math.random() * 100}%;
+          animation-duration:${dur}s;
+          animation-delay:0s;
+          opacity:${0.2 + Math.random() * 0.35};
+        `;
+        container.appendChild(p);
+        setTimeout(() => p.remove(), dur * 1000);
+      };
+
+      for(let i = 0; i < 8; i++) spawn();
+      /* Slower interval = less DOM churn */
+      setInterval(spawn, 2000);
+    }, 200);
+  });
+})();
+
+/* ================================================
+   WAVE TIMELINE: inject decorative SVG wave cord
+   Adds a subtle wavy line behind the straight cord
+   to make the timeline visually feel like a wave path
+================================================ */
+function injectWaveCord(){
+  const timeline = document.getElementById("dynamicTimeline");
+  if(!timeline) return;
+
+  /* Remove any existing wave SVG */
+  const existing = document.getElementById("tlWaveSVG");
+  if(existing) existing.remove();
+
+  const h = timeline.scrollHeight || 800;
+
+  /* Build SVG path — sinusoidal wave following the center */
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.id = "tlWaveSVG";
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", h);
+  svg.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: ${h}px;
+    pointer-events: none;
+    z-index: 0;
+    overflow: visible;
+  `;
+
+  /* Build a sinusoidal SVG path */
+  const centerX = 50; /* % — center of timeline */
+  const amplitude = 18; /* px — how much the wave deviates */
+  const segments = 24;
+  const segH = h / segments;
+
+  let d = `M 50% 0 `;
+  for(let i = 0; i <= segments; i++){
+    const y = i * segH;
+    const x = centerX + (i % 2 === 0 ? amplitude : -amplitude);
+    /* Cubic bezier for smooth wave */
+    const cpY1 = (i - 0.5) * segH;
+    const cpY2 = (i - 0.5) * segH;
+    const cpX1 = i % 2 === 0 ? centerX - amplitude * 0.8 : centerX + amplitude * 0.8;
+    const cpX2 = x;
+    if(i === 0) d = `M ${centerX}% 0 `;
+    else d += `C ${cpX1}% ${cpY1} ${cpX2}% ${cpY2} ${x}% ${y} `;
+  }
+
+  /* Faint decorative wave path */
+  const wavePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  wavePath.setAttribute("d", d);
+  wavePath.setAttribute("fill", "none");
+  wavePath.setAttribute("stroke", "rgba(255,0,60,0.07)");
+  wavePath.setAttribute("stroke-width", "28");
+  wavePath.setAttribute("stroke-linecap", "round");
+
+  /* Crisp center line on top */
+  const centerLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  centerLine.setAttribute("x1", "50%");
+  centerLine.setAttribute("y1", "0");
+  centerLine.setAttribute("x2", "50%");
+  centerLine.setAttribute("y2", h);
+  centerLine.setAttribute("stroke", "rgba(255,0,60,0.08)");
+  centerLine.setAttribute("stroke-width", "3");
+  centerLine.setAttribute("stroke-dasharray", "6 8");
+
+  svg.appendChild(wavePath);
+  svg.appendChild(centerLine);
+  timeline.insertBefore(svg, timeline.firstChild);
+}
+
+/* ================================================
+   PATCH renderDynamicTimeline to also inject wave
+================================================ */
+const _origRenderTimeline = window.renderDynamicTimeline || renderDynamicTimeline;
+window.renderDynamicTimeline = function(){
+  if(typeof _origRenderTimeline === "function") _origRenderTimeline();
+  /* Inject wave after a tick so items are rendered */
+  setTimeout(injectWaveCord, 80);
+};
+
+/* Also reinject on resize */
+window.addEventListener("resize", () => {
+  const isMobile = window.innerWidth <= 860;
+  const svg = document.getElementById("tlWaveSVG");
+  /* Hide wave SVG on mobile (single column, no wave needed) */
+  if(svg) svg.style.display = isMobile ? "none" : "block";
+}, { passive: true });
+
+/* ================================================
+   PERFORMANCE: lazy-load hero background
+   Swap to higher-res image after page is interactive
+================================================ */
+(function lazyHero(){
+  window.addEventListener("load", () => {
+    const hero = document.querySelector(".home-hero");
+    if(!hero) return;
+    /* Upgrade to full res after everything else loads */
+    const img = new Image();
+    img.onload = () => {
+      hero.style.backgroundImage = `url('${img.src}')`;
+    };
+    img.src = "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1800&auto=format&fit=crop";
+  });
+})();
+
+/* ================================================
+   PERFORMANCE: defer scroll reveal observer
+   Don't start observing until after splash is gone
+================================================ */
+(function deferReveal(){
+  /* Re-run scroll reveal after splash finishes (2s) */
+  setTimeout(() => {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if(entry.isIntersecting){
+          setTimeout(() => entry.target.classList.add("revealed"), i * 60);
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".reveal-on-scroll:not(.revealed)").forEach(el => io.observe(el));
+  }, 2200);
+})();
+/* ================================================
+   LOVEFLIX — MASONRY + BACKGROUND UPLOAD + PAGINATION PATCH
+   Paste at the very BOTTOM of app.js
+   (after the window.nextWyr / final_patch.js block)
+   ================================================ */
+
+/* ================================================
+   1. UPLOAD QUEUE — background upload system
+   Replaces the blocking overlay for addMediaToMemory()
+   createMemory() keeps its blocking overlay (needs URL before saving)
+   ================================================ */
+
+/* Ensure queue container exists */
+function ensureUploadQueue(){
+  let q = document.getElementById("uploadQueue");
+  if(!q){
+    q = document.createElement("div");
+    q.id = "uploadQueue";
+    document.body.appendChild(q);
+  }
+  return q;
+}
+
+/* Create a single task card in the queue */
+function createQueueTask(filename){
+  const queue = ensureUploadQueue();
+  const task  = document.createElement("div");
+  task.className = "uq-task";
+
+  /* Truncate long filenames */
+  const displayName = filename.length > 28
+    ? filename.slice(0,25) + "…"
+    : filename;
+
+  task.innerHTML = `
+    <div class="uq-header">
+      <span class="uq-filename">${displayName}</span>
+      <span class="uq-status" id="uqs-${task.dataset.id}">uploading</span>
+    </div>
+    <div class="uq-bar-outer">
+      <div class="uq-bar-fill" id="uqf-${task.dataset.id}"></div>
+    </div>`;
+
+  /* Give it a unique id */
+  const uid = `uqt_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+  task.id = uid;
+  task.querySelector(".uq-status").id = `uqs_${uid}`;
+  task.querySelector(".uq-bar-fill").id = `uqf_${uid}`;
+
+  queue.appendChild(task);
+  return uid;
+}
+
+function updateQueueTask(uid, pct){
+  const fill = document.getElementById(`uqf_${uid}`);
+  const stat = document.getElementById(`uqs_${uid}`);
+  if(fill) fill.style.width = Math.min(pct, 99) + "%"; /* hold at 99 until confirmed */
+  if(stat && pct < 100) stat.textContent = Math.round(pct) + "%";
+}
+
+function completeQueueTask(uid, success){
+  const task = document.getElementById(uid);
+  const fill = document.getElementById(`uqf_${uid}`);
+  const stat = document.getElementById(`uqs_${uid}`);
+  if(!task) return;
+
+  if(success){
+    task.classList.add("uq-done");
+    if(fill) fill.style.width = "100%";
+    if(stat) stat.textContent = "saved ❤️";
+  } else {
+    task.classList.add("uq-error");
+    if(stat) stat.textContent = "failed";
+  }
+
+  /* Auto-dismiss after 3s */
+  setTimeout(()=>{
+    task.classList.add("uq-removing");
+    setTimeout(()=> task.remove(), 420);
+  }, 3000);
+}
+
+/* ================================================
+   2. PATCHED addMediaToMemory — non-blocking
+   Replaces the original function entirely
+   ================================================ */
+
+window.addMediaToMemory = function(){
+  if(!currentMemory) return;
+
+  const input    = document.createElement("input");
+  input.type     = "file";
+  input.accept   = "image/*,video/*";
+  input.multiple = true;
+
+  input.onchange = async () => {
+    const files      = Array.from(input.files);
+    if(!files.length) return;
+
+    const imageFiles = files.filter(f => f.type.startsWith("image/"));
+    const videoFiles = files.filter(f => f.type.startsWith("video/"));
+
+    if(imageFiles.length > 10){
+      alert("Max 10 images at a time ❤️"); return;
+    }
+    if(videoFiles.length > 1){
+      alert("Upload one video at a time ❤️"); return;
+    }
+    for(const vf of videoFiles){
+      if(vf.size > 500 * 1024 * 1024){
+        alert(`"${vf.name}" is too large (max 500MB) ❤️`); return;
+      }
+    }
+
+    /* Snapshot current state */
+    const memoryId  = currentMemory.id;
+    const memoryDoc = currentMemory.docId;
+    let imgs = [...currentMemory.images];
+    let vids = [...(currentMemory.videos || [])];
+
+    /* Queue all files immediately so the user can see them start */
+    const allFiles = [...imageFiles, ...videoFiles];
+    const taskUIDs = allFiles.map(f => createQueueTask(f.name));
+
+    /* Upload in background — don't await at top level */
+    (async () => {
+      let anyFailed = false;
+
+      try {
+        /* Upload images */
+        for(let i = 0; i < imageFiles.length; i++){
+          const file = imageFiles[i];
+          const uid  = taskUIDs[i];
+          try {
+            const data = await uploadToCloudinary(file, pct => updateQueueTask(uid, pct));
+            imgs.push(data.secure_url);
+            completeQueueTask(uid, true);
+          } catch(e) {
+            console.error("Image upload failed:", e);
+            completeQueueTask(uid, false);
+            anyFailed = true;
+          }
+        }
+
+        /* Upload videos */
+        for(let i = 0; i < videoFiles.length; i++){
+          const file = videoFiles[i];
+          const uid  = taskUIDs[imageFiles.length + i];
+          try {
+            const data = await uploadToCloudinary(file, pct => updateQueueTask(uid, pct));
+            vids.push(data.secure_url);
+            completeQueueTask(uid, true);
+          } catch(e) {
+            console.error("Video upload failed:", e);
+            completeQueueTask(uid, false);
+            anyFailed = true;
+          }
+        }
+
+        /* Save to Firestore */
+        await updateDoc(doc(db, "memories", memoryDoc), {
+          images: imgs,
+          videos: vids,
+          hero: imgs[0] || currentMemory.hero
+        });
+
+        /* Refresh the view if user is still on the same memory */
+        await loadMemories();
+        const updated = memories.find(m => m.id === memoryId);
+        if(updated){
+          currentMemory = updated;
+          /* Only re-render if user is still viewing this memory */
+          const screen = document.getElementById("memoryScreen");
+          if(screen && screen.style.display !== "none"){
+            renderMemory(currentMemory);
+          }
+        }
+
+      } catch(e) {
+        console.error("Background upload error:", e);
+        /* Mark remaining tasks as failed */
+        taskUIDs.forEach(uid => {
+          const task = document.getElementById(uid);
+          if(task && !task.classList.contains("uq-done") && !task.classList.contains("uq-error")){
+            completeQueueTask(uid, false);
+          }
+        });
+      }
+    })();
+
+    /* User can immediately keep browsing — we return here */
+  };
+
+  input.click();
+};
+
+/* ================================================
+   3. MASONRY GALLERY — patch renderMemory
+   Replaces the gallery and video sections with masonry layouts
+   ================================================ */
+
+/* Store original renderMemory */
+const _origRenderMemory = window.renderMemory || renderMemory;
+
+/* Override with masonry version */
+window.renderMemory = function(memory){
+  const home    = document.getElementById("homeScreen");
+  const screen  = document.getElementById("memoryScreen");
+  const content = document.getElementById("memoryContent");
+  if(home)   home.style.display   = "none";
+  if(screen) screen.style.display = "block";
+
+  const videos = memory.videos || [];
+
+  /* IMAGE MASONRY */
+  const imageGallery = memory.images.length
+    ? memory.images.map((img, i) => `
+        <div class="card gallery-card"
+          onclick='openGallery(${JSON.stringify(memory.images)}, ${i})'>
+          <img src="${img}" loading="lazy" alt="${memory.title}">
+          <button class="img-delete-btn"
+            onclick="event.stopPropagation(); deleteImageFromMemory(${i})">🗑</button>
+          <div class="card-overlay">
+            <h3>${memory.title}</h3>
+            <p>${i + 1} / ${memory.images.length}</p>
+          </div>
+        </div>`).join("")
+    : '<p style="opacity:0.5;padding:18px 0;">No images yet.</p>';
+
+  /* VIDEO MASONRY */
+  const videoGallery = videos.length
+    ? videos.map((vid, vi) => {
+        const isFav = favoriteVideos.includes(vid);
+        return `
+        <div class="card gallery-card video-card" onclick="openVideo('${vid}')">
+          <video src="${vid}" muted playsinline preload="metadata"></video>
+          <div class="play-badge">▶</div>
+          <button class="img-delete-btn"
+            onclick="event.stopPropagation(); deleteVideoFromMemory(${vi})">🗑</button>
+          <button class="fav-btn"
+            onclick="event.stopPropagation(); toggleVideoFavorite('${vid}')">${isFav ? "❤️" : "🤍"}</button>
+          <div class="card-overlay">
+            <h3>${memory.title}</h3>
+            <p>Video ${vi + 1} / ${videos.length}</p>
+          </div>
+        </div>`;
+      }).join("")
+    : '<p style="opacity:0.5;padding:18px 0;">No videos yet. Use ➕ Add Media to upload.</p>';
+
+  /* RECOMMENDATIONS */
+  const recs = memories
+    .filter(m => m.id !== memory.id)
+    .map(rec => `
+      <div class="card" onclick="openMemory('${rec.id}')">
+        <img src="${rec.hero}" loading="lazy" alt="${rec.title}">
+        <div class="card-overlay"><h3>${rec.title}</h3></div>
+      </div>`).join("");
+
+  content.innerHTML = `
+  <section class="hero" style="background-image:url('${memory.hero}')">
+    <div class="overlay"></div>
+    <div class="hero-content">
+      <h1>${memory.title}</h1>
+      <p>${memory.description}</p>
+      <div class="memory-meta">
+        <span>📸 ${memory.images.length} images</span>
+        <span>🎬 ${videos.length} videos</span>
+        <span>👁 Opens: ${memory.opens || 0}</span>
+      </div>
+      <div class="hero-buttons">
+        <button class="play-btn" onclick="addMediaToMemory()">➕ Add Media</button>
+        <button class="info-btn" onclick="showHome()">← Back</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Gallery 📸</h2>
+    ${memory.images.length
+      ? `<div class="masonry-gallery">${imageGallery}</div>`
+      : imageGallery
+    }
+  </section>
+
+  <section class="section">
+    <h2>Videos 🎬</h2>
+    ${videos.length
+      ? `<div class="video-masonry">${videoGallery}</div>`
+      : videoGallery
+    }
+  </section>
+
+  <section class="section">
+    <h2>More Like This ❤️</h2>
+    <div class="netflix-row">${recs}</div>
+  </section>`;
+};
+
+/* ================================================
+   4. PAGINATED MEMORY ROWS
+   Shows PAGE_SIZE memories at a time, Load More button for rest
+   ================================================ */
+
+const PAGE_SIZE = 6;
+let _rowsPage   = 0; /* current page (0-indexed) */
+
+/* Override generateRows with paginated version */
+window.generateRows = function(){
+  _rowsPage = 0; /* reset to first page on refresh */
+  _renderRowsPage(true);
+};
+
+function _renderRowsPage(replace){
+  const rows = document.getElementById("rows");
+  if(!rows) return;
+
+  const start  = 0;
+  const end    = (_rowsPage + 1) * PAGE_SIZE;
+  const slice  = memories.slice(start, end);
+  const hasMore= end < memories.length;
+
+  const html = slice.map(m => `
+    <section class="section reveal-on-scroll">
+      <h2>${m.title}</h2>
+      <div class="netflix-row">
+        <div class="card" onclick="openMemory('${m.id}')">
+          <img src="${m.hero}" loading="lazy" alt="${m.title}">
+          <div class="card-overlay">
+            <h3>${m.title}</h3>
+            <p>${m.description}</p>
+            <div class="card-actions">
+              <button onclick="event.stopPropagation();toggleFavorite('${m.id}')">❤️ Fav</button>
+              <button onclick="event.stopPropagation();editMemory('${m.id}')">✏️ Edit</button>
+              <button class="delete-btn"
+                onclick="event.stopPropagation();deleteMemory('${m.docId}')">🗑 Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>`).join("");
+
+  const loadMoreHTML = hasMore ? `
+    <div class="load-more-wrap">
+      <button class="load-more-btn" onclick="loadMoreRows()">
+        <span class="lm-icon">↓</span>
+        Load More Memories
+      </button>
+    </div>` : "";
+
+  rows.innerHTML = html + loadMoreHTML;
+
+  /* Re-observe new .reveal-on-scroll elements */
+  setTimeout(() => {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if(entry.isIntersecting){
+          setTimeout(() => entry.target.classList.add("revealed"), i * 60);
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    rows.querySelectorAll(".reveal-on-scroll:not(.revealed)").forEach(el => io.observe(el));
+  }, 100);
+}
+
+window.loadMoreRows = function(){
+  _rowsPage++;
+  _renderRowsPage(false);
+};
+
+/* ================================================
+   5. TOP MEMORIES ROW — populate by opens count
+   Was empty before — now shows top 5 most opened
+   ================================================ */
+
+/* Patch refreshApp to also populate topMemories */
+const _origGenerateRows2 = window.generateRows;
+const _origRefreshAppFinal = window.refreshApp;
+
+window.refreshApp = async function(){
+  await loadMemories();
+  generateRows();
+  generateContinueWatching();
+  generateFavorites();
+  generateTopMemories();
+  /* Update hero stat */
+  setTimeout(() => {
+    const el = document.getElementById("heroStatMemories");
+    if(el && typeof animateCounter === "function") animateCounter(el, memories.length, 700);
+    else if(el) el.textContent = memories.length;
+  }, 200);
+};
+
+function generateTopMemories(){
+  const row = document.getElementById("topMemories");
+  if(!row) return;
+
+  const top = [...memories]
+    .sort((a, b) => (b.opens || 0) - (a.opens || 0))
+    .slice(0, 8);
+
+  if(!top.length){
+    row.innerHTML = '<p style="opacity:0.45;padding:18px;font-size:0.9rem;font-style:italic;">Open some memories to see them here ❤️</p>';
+    return;
+  }
+
+  row.innerHTML = top.map(m => `
+    <div class="card" onclick="openMemory('${m.id}')">
+      <img src="${m.hero}" loading="lazy" alt="${m.title}">
+      <div class="card-overlay">
+        <h3>${m.title}</h3>
+        <p>🔥 ${m.opens || 0} replays</p>
+      </div>
+    </div>`).join("");
+}
+/* ================================================
+   LOVEFLIX — GALLERY GRID + PAGINATION + SLIDESHOW
+   Paste at the very BOTTOM of app.js
+   (replaces the renderMemory and generateRows
+    overrides from masonry_upload_patch.js —
+    this is the corrected, definitive version)
+   ================================================ */
+
+/* ================================================
+   GALLERY PAGINATION STATE
+   10 images per page, per memory
+   ================================================ */
+
+const GALLERY_PAGE_SIZE = 10;
+let _galleryPage = 0;        /* current image page */
+let _galleryImages = [];     /* full image array for current memory */
+let _galleryMemory = null;   /* reference to current memory */
+
+/* ================================================
+   renderMemory — DEFINITIVE VERSION
+   Grid gallery with pagination + video grid
+   ================================================ */
+
+window.renderMemory = function(memory){
+  const home    = document.getElementById("homeScreen");
+  const screen  = document.getElementById("memoryScreen");
+  const content = document.getElementById("memoryContent");
+  if(home)   home.style.display   = "none";
+  if(screen) screen.style.display = "block";
+
+  /* Reset gallery pagination whenever we open a memory */
+  _galleryPage   = 0;
+  _galleryImages = memory.images || [];
+  _galleryMemory = memory;
+
+  const videos = memory.videos || [];
+
+  /* Build recommendations */
+  const recs = memories
+    .filter(m => m.id !== memory.id)
+    .slice(0, 8)  /* max 8 recs */
+    .map(rec => `
+      <div class="card" onclick="openMemory('${rec.id}')">
+        <img src="${rec.hero}" loading="lazy" alt="${rec.title}">
+        <div class="card-overlay"><h3>${rec.title}</h3></div>
+      </div>`).join("");
+
+  /* Build video grid HTML */
+  const videoHTML = videos.length
+    ? `<div class="video-grid-layout">
+        ${videos.map((vid, vi) => {
+          const isFav = favoriteVideos.includes(vid);
+          return `
+          <div class="card gallery-card video-card" onclick="openVideo('${vid}')">
+            <video src="${vid}" muted playsinline preload="metadata"></video>
+            <div class="play-badge">▶</div>
+            <button class="img-delete-btn"
+              onclick="event.stopPropagation(); deleteVideoFromMemory(${vi})">🗑</button>
+            <button class="fav-btn"
+              onclick="event.stopPropagation(); toggleVideoFavorite('${vid}')">${isFav ? "❤️" : "🤍"}</button>
+            <div class="card-overlay">
+              <h3>${memory.title}</h3>
+              <p>Video ${vi + 1} / ${videos.length}</p>
+            </div>
+          </div>`;
+        }).join("")}
+       </div>`
+    : '<p style="opacity:0.5;padding:16px 0;font-style:italic;font-size:0.9rem;">No videos yet. Use ➕ Add Media to upload.</p>';
+
+  /* Inject the page shell — gallery section gets a placeholder */
+  content.innerHTML = `
+  <section class="hero" style="background-image:url('${memory.hero}')">
+    <div class="overlay"></div>
+    <div class="hero-content">
+      <h1>${memory.title}</h1>
+      <p>${memory.description}</p>
+      <div class="memory-meta">
+        <span>📸 ${memory.images.length} images</span>
+        <span>🎬 ${videos.length} videos</span>
+        <span>👁 Opens: ${memory.opens || 0}</span>
+      </div>
+      <div class="hero-buttons">
+        <button class="play-btn" onclick="addMediaToMemory()">➕ Add Media</button>
+        <button class="info-btn" onclick="showHome()">← Back</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="gallerySectionWrap">
+    <h2>Gallery 📸</h2>
+    <div id="galleryGridContainer"></div>
+  </section>
+
+  <section class="section">
+    <h2>Videos 🎬</h2>
+    ${videoHTML}
+  </section>
+
+  <section class="section">
+    <h2>More Like This ❤️</h2>
+    <div class="netflix-row">${recs}</div>
+  </section>`;
+
+  /* Render first page of gallery */
+  _renderGalleryPage();
+};
+
+/* ================================================
+   _renderGalleryPage
+   Renders the current _galleryPage slice into #galleryGridContainer
+   ================================================ */
+
+function _renderGalleryPage(){
+  const container = document.getElementById("galleryGridContainer");
+  if(!container) return;
+
+  const total     = _galleryImages.length;
+  const totalPages= Math.ceil(total / GALLERY_PAGE_SIZE);
+  const start     = _galleryPage * GALLERY_PAGE_SIZE;
+  const end       = Math.min(start + GALLERY_PAGE_SIZE, total);
+  const slice     = _galleryImages.slice(start, end);
+
+  /* No images */
+  if(!total){
+    container.innerHTML = '<p style="opacity:0.5;padding:16px 0;font-style:italic;font-size:0.9rem;">No images yet. Use ➕ Add Media to upload.</p>';
+    return;
+  }
+
+  /* Build grid cards for this page */
+  /* Pass full image array + absolute index for viewer so navigation works across pages */
+  const gridHTML = slice.map((img, localIdx) => {
+    const globalIdx = start + localIdx;
+    /* Serialize the full image array once — safe since openGallery needs all images for prev/next */
+    return `
+    <div class="card gallery-card"
+      onclick="openGallery(window._galleryImages, ${globalIdx})">
+      <img src="${img}" loading="lazy" alt="Memory image ${globalIdx + 1}">
+      <button class="img-delete-btn"
+        onclick="event.stopPropagation(); deleteImageFromMemory(${globalIdx})">🗑</button>
+      <div class="card-overlay">
+        <p>${globalIdx + 1} / ${total}</p>
+      </div>
+    </div>`;
+  }).join("");
+
+  /* Build pagination controls */
+  const paginator = totalPages > 1 ? `
+    <div class="gallery-pagination">
+      <button class="gallery-page-btn"
+        onclick="_galleryPage--; _renderGalleryPage()"
+        ${_galleryPage === 0 ? "disabled" : ""}>← Prev</button>
+      <span class="gallery-page-info">
+        ${_galleryPage + 1} / ${totalPages} &nbsp;·&nbsp; images ${start + 1}–${end} of ${total}
+      </span>
+      <button class="gallery-page-btn"
+        onclick="_galleryPage++; _renderGalleryPage()"
+        ${_galleryPage >= totalPages - 1 ? "disabled" : ""}>Next →</button>
+    </div>` : "";
+
+  container.innerHTML = `
+    <div class="gallery-grid">${gridHTML}</div>
+    ${paginator}`;
+
+  /* Scroll gallery section into view smoothly when paginating */
+  const wrap = document.getElementById("gallerySectionWrap");
+  if(wrap && _galleryPage > 0){
+    wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+/* Expose pagination functions to inline onclick handlers */
+window._galleryPage        = _galleryPage;
+window._renderGalleryPage  = _renderGalleryPage;
+
+/* Also expose _galleryImages so openGallery inline ref works */
+window._galleryImages = _galleryImages;
+
+/* Keep window._galleryImages in sync whenever we update state */
+const _patchOpenGallery = window.openGallery;
+window.openGallery = async function(images, index){
+  /* Always update window ref before calling original */
+  window._galleryImages = images;
+  if(typeof _patchOpenGallery === "function") return _patchOpenGallery(images, index);
+};
+
+/* ================================================
+   generateRows — DEFINITIVE PAGINATED VERSION
+   Fixes the previous version's bug where _renderRowsPage
+   always re-sliced from 0 so Load More didn't append.
+   Now it correctly APPENDS new rows on Load More.
+   ================================================ */
+
+const ROWS_PAGE_SIZE = 6;
+let _rowsLoaded = 0;  /* how many memories are currently showing */
+
+window.generateRows = function(){
+  _rowsLoaded = 0;
+  const rows = document.getElementById("rows");
+  if(rows) rows.innerHTML = "";
+  _appendRows();
+};
+
+window.loadMoreRows = function(){
+  _appendRows();
+};
+
+function _appendRows(){
+  const rows = document.getElementById("rows");
+  if(!rows) return;
+
+  const start   = _rowsLoaded;
+  const end     = Math.min(_rowsLoaded + ROWS_PAGE_SIZE, memories.length);
+  const slice   = memories.slice(start, end);
+  const hasMore = end < memories.length;
+
+  /* Remove existing load-more button before appending */
+  const existingBtn = rows.querySelector(".load-more-wrap");
+  if(existingBtn) existingBtn.remove();
+
+  /* Append new sections */
+  slice.forEach(m => {
+    const section = document.createElement("section");
+    section.className = "section reveal-on-scroll";
+    section.innerHTML = `
+      <h2>${m.title}</h2>
+      <div class="netflix-row">
+        <div class="card" onclick="openMemory('${m.id}')">
+          <img src="${m.hero}" loading="lazy" alt="${m.title}">
+          <div class="card-overlay">
+            <h3>${m.title}</h3>
+            <p>${m.description}</p>
+            <div class="card-actions">
+              <button onclick="event.stopPropagation();toggleFavorite('${m.id}')">❤️ Fav</button>
+              <button onclick="event.stopPropagation();editMemory('${m.id}')">✏️ Edit</button>
+              <button class="delete-btn"
+                onclick="event.stopPropagation();deleteMemory('${m.docId}')">🗑 Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    rows.appendChild(section);
+  });
+
+  _rowsLoaded = end;
+
+  /* Append load more button if there's more */
+  if(hasMore){
+    const wrap = document.createElement("div");
+    wrap.className = "load-more-wrap";
+    wrap.innerHTML = `
+      <button class="load-more-btn" onclick="loadMoreRows()">
+        <span class="lm-icon">↓</span>
+        Load More Memories (${memories.length - _rowsLoaded} remaining)
+      </button>`;
+    rows.appendChild(wrap);
+  }
+
+  /* Observe new reveal elements */
+  setTimeout(() => {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if(entry.isIntersecting){
+          setTimeout(() => entry.target.classList.add("revealed"), i * 55);
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    rows.querySelectorAll(".reveal-on-scroll:not(.revealed)").forEach(el => io.observe(el));
+  }, 80);
+}
+
+/* ================================================
+   HERO SLIDESHOW
+   Cycles through all memory hero images + gallery images
+   Crossfades every 5 seconds
+   Only runs on home screen, pauses when hidden
+   ================================================ */
+
+let _slideshowImages  = [];
+let _slideshowIndex   = 0;
+let _slideshowTimer   = null;
+let _slideshowLayerA  = null;
+let _slideshowLayerB  = null;
+let _slideshowActive  = "A"; /* which layer is currently visible */
+
+function initHeroSlideshow(){
+  const hero = document.querySelector(".home-hero");
+  if(!hero) return;
+
+  /* Create two crossfade layers */
+  _slideshowLayerA = document.createElement("div");
+  _slideshowLayerA.className = "hero-slide-layer active";
+  _slideshowLayerA.id = "heroSlideA";
+
+  _slideshowLayerB = document.createElement("div");
+  _slideshowLayerB.className = "hero-slide-layer inactive";
+  _slideshowLayerB.id = "heroSlideB";
+
+  /* Insert before all other children */
+  hero.insertBefore(_slideshowLayerB, hero.firstChild);
+  hero.insertBefore(_slideshowLayerA, hero.firstChild);
+
+  /* Build initial pool and start */
+  _refreshSlideshowPool();
+}
+
+function _refreshSlideshowPool(){
+  /* Collect all hero images from memories */
+  const pool = [];
+
+  memories.forEach(m => {
+    if(m.hero) pool.push(m.hero);
+    /* Also include first 3 gallery images per memory for variety */
+    if(m.images && m.images.length > 1){
+      m.images.slice(1, 4).forEach(img => pool.push(img));
+    }
+  });
+
+  /* Fallback — use the Unsplash default if no memories yet */
+  if(!pool.length){
+    pool.push("https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=60&w=1400&auto=format&fit=crop");
+  }
+
+  /* Shuffle pool for variety */
+  _slideshowImages = pool.sort(() => Math.random() - 0.5);
+  _slideshowIndex  = 0;
+
+  /* Set first image immediately */
+  if(_slideshowLayerA){
+    _slideshowLayerA.style.backgroundImage = `url('${_slideshowImages[0]}')`;
+  }
+
+  /* Start cycling */
+  _startSlideshow();
+}
+
+function _startSlideshow(){
+  /* Clear any existing timer */
+  if(_slideshowTimer) clearInterval(_slideshowTimer);
+
+  /* Only run when tab is visible */
+  _slideshowTimer = setInterval(() => {
+    if(document.hidden) return;
+    /* Only run when home screen is visible */
+    const home = document.getElementById("homeScreen");
+    if(!home || home.style.display === "none") return;
+
+    _slideshowIndex = (_slideshowIndex + 1) % _slideshowImages.length;
+    _crossfadeSlide(_slideshowImages[_slideshowIndex]);
+  }, 5000);
+}
+
+function _crossfadeSlide(imageUrl){
+  if(!_slideshowLayerA || !_slideshowLayerB) return;
+
+  if(_slideshowActive === "A"){
+    /* Preload into B, then swap */
+    _slideshowLayerB.style.backgroundImage = `url('${imageUrl}')`;
+    _slideshowLayerB.className = "hero-slide-layer active";
+    _slideshowLayerA.className = "hero-slide-layer inactive";
+    _slideshowActive = "B";
+  } else {
+    _slideshowLayerA.style.backgroundImage = `url('${imageUrl}')`;
+    _slideshowLayerA.className = "hero-slide-layer active";
+    _slideshowLayerB.className = "hero-slide-layer inactive";
+    _slideshowActive = "A";
+  }
+}
+
+/* Refresh the pool whenever memories update */
+const _origRefreshAppFinal2 = window.refreshApp;
+window.refreshApp = async function(){
+  await loadMemories();
+  generateRows();
+  generateContinueWatching();
+  generateFavorites();
+  generateTopMemories();
+
+  /* Refresh slideshow pool with new images */
+  if(_slideshowLayerA) _refreshSlideshowPool();
+
+  /* Hero stat counter */
+  setTimeout(() => {
+    const el = document.getElementById("heroStatMemories");
+    if(el && typeof animateCounter === "function") animateCounter(el, memories.length, 700);
+    else if(el) el.textContent = memories.length;
+  }, 200);
+};
+
+/* Boot slideshow after profile is selected and home shows */
+const _origSelectProfileFinal = window.selectProfile;
+window.selectProfile = function(profile){
+  _origSelectProfileFinal(profile);
+  /* Init slideshow after home screen appears */
+  setTimeout(() => {
+    if(!_slideshowLayerA) initHeroSlideshow();
+  }, 700);
+};
+
+/* Also init if returning from sessionStorage profile */
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    const home = document.getElementById("homeScreen");
+    if(home && home.style.display !== "none" && !_slideshowLayerA){
+      initHeroSlideshow();
+    }
+  }, 3500);
+});
+
+/* generateTopMemories — defined here to avoid duplicate */
+window.generateTopMemories = function(){
+  const row = document.getElementById("topMemories");
+  if(!row) return;
+
+  const top = [...memories]
+    .filter(m => (m.opens || 0) > 0)
+    .sort((a, b) => (b.opens || 0) - (a.opens || 0))
+    .slice(0, 8);
+
+  if(!top.length){
+    row.innerHTML = '<p style="opacity:0.4;padding:16px;font-size:0.88rem;font-style:italic;">Open some memories to see them here ❤️</p>';
+    return;
+  }
+
+  row.innerHTML = top.map(m => `
+    <div class="card" onclick="openMemory('${m.id}')">
+      <img src="${m.hero}" loading="lazy" alt="${m.title}">
+      <div class="card-overlay">
+        <h3>${m.title}</h3>
+        <p>🔥 ${m.opens || 0} replays</p>
+      </div>
+    </div>`).join("");
+};
