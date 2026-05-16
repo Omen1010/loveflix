@@ -1187,3 +1187,1094 @@ window.toggleVideoFavorite = function(url){
   localStorage.setItem("loveflix_fav_videos", JSON.stringify(favoriteVideos));
   if(currentMemory) renderMemory(currentMemory);
 };
+/* =========================
+   LOVEFLIX — JS ADDITIONS
+   Paste this entire block at the BOTTOM of app.js
+   (after the last line: toggleVideoFavorite function)
+========================= */
+
+/* =========================
+   CUSTOM CURSOR
+========================= */
+
+(function initCursor(){
+  const cursor = document.getElementById("customCursor");
+  const ring = document.getElementById("customCursorRing");
+  if(!cursor || !ring) return;
+
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener("mousemove", e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + "px";
+    cursor.style.top = my + "px";
+  });
+
+  // Ring follows with lag
+  function animRing(){
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + "px";
+    ring.style.top = ry + "px";
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+
+  // Enlarge ring on hoverable elements
+  document.addEventListener("mouseover", e => {
+    if(e.target.closest("button, a, .card, .game-card, .timeline-item, .profile-card")){
+      ring.style.width = "55px";
+      ring.style.height = "55px";
+      ring.style.borderColor = "rgba(255,0,60,0.8)";
+    } else {
+      ring.style.width = "38px";
+      ring.style.height = "38px";
+      ring.style.borderColor = "rgba(255,0,60,0.5)";
+    }
+  });
+
+  document.addEventListener("mousedown", () => {
+    cursor.style.transform = "translate(-50%,-50%) scale(0.6)";
+  });
+  document.addEventListener("mouseup", () => {
+    cursor.style.transform = "translate(-50%,-50%) scale(1)";
+  });
+})();
+
+/* =========================
+   HERO RIPPLE ON BUTTON
+========================= */
+
+window.addHeroRipple = function(e){
+  const btn = e.currentTarget;
+  const ripple = document.createElement("span");
+  ripple.className = "btn-ripple";
+  const size = Math.max(btn.offsetWidth, btn.offsetHeight) * 2;
+  const rect = btn.getBoundingClientRect();
+  ripple.style.cssText = `
+    width:${size}px; height:${size}px;
+    left:${e.clientX - rect.left - size/2}px;
+    top:${e.clientY - rect.top - size/2}px;
+  `;
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 700);
+};
+
+/* =========================
+   HERO FLOATING PARTICLES
+========================= */
+
+(function initParticles(){
+  const container = document.getElementById("heroParticles");
+  if(!container) return;
+
+  function spawnParticle(){
+    const p = document.createElement("div");
+    p.className = "hero-particle";
+    const size = 2 + Math.random() * 4;
+    const duration = 7 + Math.random() * 10;
+    const delay = Math.random() * 5;
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random() * 100}%;
+      animation-duration:${duration}s;
+      animation-delay:${delay}s;
+      opacity:${0.3 + Math.random() * 0.5};
+    `;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), (duration + delay) * 1000);
+  }
+
+  for(let i = 0; i < 18; i++) spawnParticle();
+  setInterval(spawnParticle, 900);
+})();
+
+/* =========================
+   NAVBAR SCROLL EFFECT
+========================= */
+
+(function initNavbarScroll(){
+  const navbar = document.getElementById("navbar");
+  if(!navbar) return;
+  window.addEventListener("scroll", () => {
+    if(window.scrollY > 60){
+      navbar.classList.add("scrolled");
+    } else {
+      navbar.classList.remove("scrolled");
+    }
+  });
+})();
+
+/* =========================
+   SCROLL REVEAL
+========================= */
+
+(function initScrollReveal(){
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if(entry.isIntersecting){
+        setTimeout(() => {
+          entry.target.classList.add("revealed");
+        }, i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  function observeAll(){
+    document.querySelectorAll(".reveal-on-scroll:not(.revealed)").forEach(el => {
+      observer.observe(el);
+    });
+  }
+
+  observeAll();
+  // Re-run after memories load
+  setTimeout(observeAll, 2000);
+  setTimeout(observeAll, 4000);
+})();
+
+/* =========================
+   HERO STAT COUNTER ANIMATION
+========================= */
+
+function animateCounter(el, target, duration){
+  if(!el) return;
+  let start = 0;
+  const step = target / (duration / 16);
+  function tick(){
+    start += step;
+    if(start >= target){
+      el.textContent = target;
+      return;
+    }
+    el.textContent = Math.floor(start);
+    requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+// Hook into refreshApp — update hero stats after memories load
+const _originalRefreshApp = window._refreshAppHooked;
+const _heroStatsUpdate = function(){
+  setTimeout(() => {
+    const countEl = document.getElementById("heroStatMemories");
+    if(countEl && typeof memories !== "undefined"){
+      animateCounter(countEl, memories.length, 800);
+    }
+  }, 500);
+};
+
+// Intercept: call after each refresh
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(_heroStatsUpdate, 3500);
+});
+
+/* Override refreshApp to also update stats */
+const _nativeRefreshApp = window.refreshApp;
+window.refreshApp = async function(){
+  if(typeof refreshApp_internal === "function") await refreshApp_internal();
+  _heroStatsUpdate();
+};
+
+/* =========================
+   TIMELINE GAME ANIMATION — UPGRADED
+   Replaces triggerTGMAnimation in app.js
+   This is a full upgrade — paste over the existing triggerTGMAnimation function
+   OR just paste this here since it redefines it
+========================= */
+
+window.triggerTGMAnimation = function(type){
+  const canvas = document.getElementById("tgmAnimCanvas");
+  if(!canvas) return;
+  canvas.innerHTML = "";
+  canvas.style.cssText = "position:relative; min-height:10px; overflow:hidden; border-radius:20px;";
+
+  // Inject shared keyframes once
+  if(!document.getElementById("tgmAnimStylesV2")){
+    const s = document.createElement("style");
+    s.id = "tgmAnimStylesV2";
+    s.textContent = `
+      @keyframes tgmFloat{
+        0%{opacity:0;transform:translateY(0) scale(0.4) rotate(var(--rot,0deg));}
+        15%{opacity:1;}
+        85%{opacity:0.6;}
+        100%{opacity:0;transform:translateY(-90px) scale(1.1) rotate(calc(var(--rot,0deg) + 30deg));}
+      }
+      @keyframes tgmSpark{
+        0%{opacity:1;transform:translate(0,0) scale(1);}
+        100%{opacity:0;transform:translate(var(--tx,20px),var(--ty,-60px)) scale(0);}
+      }
+      @keyframes tgmGlowPulse{
+        0%,100%{opacity:0;}
+        50%{opacity:1;}
+      }
+      @keyframes tgmBoxPulse{
+        0%,100%{transform:scale(1);}
+        50%{transform:scale(1.03);box-shadow:0 0 60px rgba(255,0,60,0.5);}
+      }
+      @keyframes tgmLetterDrop{
+        0%{opacity:0;transform:translateY(-20px) rotate(-8deg);}
+        60%{opacity:1;transform:translateY(4px) rotate(2deg);}
+        80%{transform:translateY(-2px) rotate(-1deg);}
+        100%{opacity:1;transform:translateY(0) rotate(0deg);}
+      }
+      @keyframes tgmStarSpin{
+        0%{opacity:0;transform:translate(-50%,-50%) scale(0) rotate(0deg);}
+        40%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(180deg);}
+        100%{opacity:0;transform:translate(-50%,-50%) scale(0.5) rotate(360deg);}
+      }
+      @keyframes tgmShimmer{
+        0%{background-position:200% center;}
+        100%{background-position:-200% center;}
+      }
+      @keyframes tgmHeartBeat{
+        0%,100%{transform:scale(1);}
+        25%{transform:scale(1.3);}
+        50%{transform:scale(1.1);}
+        75%{transform:scale(1.25);}
+      }
+      @keyframes tgmWave{
+        0%{transform:translateX(-100%);}
+        100%{transform:translateX(100%);}
+      }
+      .tgm-choice.chosen{
+        background:rgba(255,0,60,0.22) !important;
+        border-color:#ff003c !important;
+        color:white !important;
+        box-shadow:0 0 20px rgba(255,0,60,0.35);
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  if(type === "hearts"){
+    // Animated heart burst with letter-by-letter reveal effect
+    canvas.style.minHeight = "80px";
+
+    const emojis = ["❤️","🩷","💕","💗","💖","🌹","💝","💓"];
+    for(let i = 0; i < 22; i++){
+      const h = document.createElement("span");
+      h.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      const rot = (Math.random() - 0.5) * 40;
+      h.style.cssText = `
+        position:absolute;
+        font-size:${11 + Math.random() * 18}px;
+        left:${3 + Math.random() * 94}%;
+        bottom:${Math.random() * 15}%;
+        --rot:${rot}deg;
+        animation:tgmFloat ${1.6 + Math.random() * 2}s ease-out forwards;
+        animation-delay:${Math.random() * 1}s;
+        pointer-events:none;
+        filter:drop-shadow(0 0 4px rgba(255,0,60,0.5));
+      `;
+      canvas.appendChild(h);
+    }
+
+    // Pulsing hearts on the tgm-box
+    const box = canvas.closest(".tgm-box");
+    if(box){
+      box.style.animation = "none";
+      void box.offsetWidth;
+      box.style.animation = "tgmHeartBeat 0.6s ease 2";
+    }
+
+  } else if(type === "sparks"){
+    // Dramatic spark burst radiating outward
+    canvas.style.minHeight = "70px";
+
+    const center = document.createElement("div");
+    center.style.cssText = `
+      position:absolute; left:50%; top:50%;
+      width:20px; height:20px;
+      border-radius:50%;
+      background:#ff003c;
+      transform:translate(-50%,-50%) scale(0);
+      animation:tgmStarSpin 0.9s ease forwards;
+      box-shadow:0 0 30px #ff003c;
+      pointer-events:none;
+    `;
+    canvas.appendChild(center);
+
+    for(let i = 0; i < 26; i++){
+      const s = document.createElement("div");
+      const angle = (i / 26) * Math.PI * 2;
+      const dist = 40 + Math.random() * 60;
+      const tx = Math.cos(angle) * dist;
+      const ty = Math.sin(angle) * dist - 20;
+      s.style.cssText = `
+        position:absolute;
+        width:${2 + Math.random() * 6}px;
+        height:${2 + Math.random() * 6}px;
+        border-radius:50%;
+        background:hsl(${330 + Math.random() * 40},100%,${50+Math.random()*25}%);
+        left:${48 + Math.random() * 4}%;
+        top:${40 + Math.random() * 20}%;
+        --tx:${tx}px; --ty:${ty}px;
+        animation:tgmSpark ${0.6 + Math.random() * 0.9}s ease-out forwards;
+        animation-delay:${0.1 + Math.random() * 0.4}s;
+        pointer-events:none;
+        box-shadow:0 0 6px currentColor;
+      `;
+      canvas.appendChild(s);
+    }
+
+  } else if(type === "glow"){
+    // Shimmer wave sweep across the modal
+    canvas.style.cssText = `
+      position:relative; min-height:14px; border-radius:20px; overflow:hidden;
+    `;
+
+    const shimmer = document.createElement("div");
+    shimmer.style.cssText = `
+      position:absolute; inset:0;
+      background:linear-gradient(90deg,
+        transparent 0%,
+        rgba(255,0,60,0.25) 30%,
+        rgba(255,107,157,0.35) 50%,
+        rgba(255,0,60,0.25) 70%,
+        transparent 100%);
+      background-size:200% 100%;
+      animation:tgmShimmer 1.2s ease 2;
+      border-radius:20px;
+      pointer-events:none;
+    `;
+    canvas.appendChild(shimmer);
+
+    // Also glow the box border
+    const box = canvas.closest(".tgm-box");
+    if(box){
+      box.style.transition = "box-shadow 0.4s ease";
+      box.style.boxShadow = "0 0 0 2px rgba(255,0,60,0.5), 0 40px 100px rgba(255,0,60,0.4)";
+      setTimeout(() => { box.style.boxShadow = "0 40px 100px rgba(255,0,60,0.25)"; }, 1600);
+    }
+
+  } else if(type === "pulse"){
+    // Full screen flash + concentric rings
+    const flash = document.createElement("div");
+    flash.style.cssText = `
+      position:fixed; inset:0; pointer-events:none;
+      background:radial-gradient(ellipse at center, rgba(255,0,60,0.12), transparent 60%);
+      animation:tgmGlowPulse 0.7s ease 2;
+      z-index:99;
+    `;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 1600);
+
+    // Ripple rings
+    canvas.style.cssText = "position:relative; min-height:60px; overflow:hidden; border-radius:20px;";
+    for(let i = 0; i < 3; i++){
+      const ring = document.createElement("div");
+      ring.style.cssText = `
+        position:absolute;
+        left:50%; top:50%;
+        width:20px; height:20px;
+        border:2px solid rgba(255,0,60,${0.7 - i * 0.2});
+        border-radius:50%;
+        transform:translate(-50%,-50%) scale(0);
+        animation:tgmBoxPulse ${0.8 + i * 0.3}s ease ${i * 0.15}s 2;
+        pointer-events:none;
+      `;
+      canvas.appendChild(ring);
+    }
+
+  } else if(type === "typewriter"){
+    // Letter-by-letter drop from above with staggered timing
+    canvas.style.cssText = "position:relative; min-height:50px; overflow:visible; border-radius:20px; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:4px; padding:10px 0;";
+
+    const words = ["still", "yours", "❤️"];
+    words.forEach((word, wi) => {
+      const wordEl = document.createElement("div");
+      wordEl.style.cssText = "display:flex; gap:1px;";
+      [...word].forEach((char, ci) => {
+        const letterEl = document.createElement("span");
+        letterEl.textContent = char;
+        letterEl.style.cssText = `
+          display:inline-block;
+          font-size:${wi === 2 ? 1.4 : 1.0}rem;
+          color:${wi === 2 ? "#ff003c" : "#ffb3c1"};
+          opacity:0;
+          animation:tgmLetterDrop 0.4s cubic-bezier(.2,.8,.2,1) forwards;
+          animation-delay:${(wi * 4 + ci) * 0.06 + 0.1}s;
+          filter:drop-shadow(0 0 8px rgba(255,0,60,0.6));
+          ${wi === 2 ? "font-size:1.6rem;" : ""}
+        `;
+        wordEl.appendChild(letterEl);
+      });
+      canvas.appendChild(wordEl);
+    });
+  }
+};
+
+/* =========================
+   MINI GAMES SYSTEM
+========================= */
+
+window.openGame = function(gameId){
+  const modal = document.getElementById("gameModal");
+  const content = document.getElementById("gameContent");
+  if(!modal || !content) return;
+
+  modal.classList.add("active");
+
+  switch(gameId){
+    case "lovemeter": renderLoveMeter(content); break;
+    case "match":     renderMemoryMatch(content); break;
+    case "truth":     renderTruthBomb(content); break;
+    case "wyr":       renderWouldYouRather(content); break;
+  }
+};
+
+window.closeGame = function(){
+  const modal = document.getElementById("gameModal");
+  if(modal) modal.classList.remove("active");
+};
+
+/* ---- LOVE METER ---- */
+function renderLoveMeter(el){
+  el.innerHTML = `
+    <h2>Love Meter 💘</h2>
+    <p class="game-sub">Let the universe calculate what we already know.</p>
+    <div class="love-meter-wrap">
+      <div class="love-meter-names">
+        <span>Budhdhu</span><span>Omen</span>
+      </div>
+      <div class="love-meter-bar-outer">
+        <div class="love-meter-bar-fill" id="lmFill"></div>
+      </div>
+      <span class="love-meter-pct" id="lmPct">—</span>
+      <div class="love-meter-result" id="lmResult"></div>
+    </div>
+    <button class="love-meter-btn" onclick="runLoveMeter()">Calculate ❤️</button>
+  `;
+}
+
+const loveMeterResults = [
+  { pct: 99, text: "Of course it's almost perfect. Almost — because nothing real is ever exactly perfect. And that's exactly why this is ours." },
+  { pct: 100, text: "The algorithm broke trying to calculate it. 100% and climbing. Science gave up. We didn't." },
+  { pct: 97, text: "97% compatible. The remaining 3% is just you being stubborn. Which honestly makes this better." },
+  { pct: 98, text: "98% — because we are the kind of danger the universe keeps warning people about but never actually stops." },
+  { pct: 96, text: "Dangerously, irreversibly, catastrophically in love. That's what 96% looks like when it's real." },
+];
+
+window.runLoveMeter = function(){
+  const fill = document.getElementById("lmFill");
+  const pct = document.getElementById("lmPct");
+  const result = document.getElementById("lmResult");
+  if(!fill) return;
+
+  fill.style.width = "0%";
+  pct.textContent = "...";
+  result.textContent = "";
+
+  const chosen = loveMeterResults[Math.floor(Math.random() * loveMeterResults.length)];
+
+  setTimeout(() => {
+    fill.style.width = chosen.pct + "%";
+    // Animate number
+    let n = 0;
+    const step = chosen.pct / 60;
+    const tick = setInterval(() => {
+      n += step;
+      if(n >= chosen.pct){
+        n = chosen.pct;
+        clearInterval(tick);
+        setTimeout(() => {
+          result.textContent = chosen.text;
+        }, 300);
+      }
+      pct.textContent = Math.floor(n) + "%";
+    }, 25);
+  }, 300);
+};
+
+/* ---- MEMORY MATCH ---- */
+const matchEmojis = ["❤️","🌙","🔥","💋","🌹","🥂","💌","✨"];
+
+function renderMemoryMatch(el){
+  let pairs = [...matchEmojis, ...matchEmojis];
+  pairs = pairs.sort(() => Math.random() - 0.5);
+
+  el.innerHTML = `
+    <h2>Memory Match 🃏</h2>
+    <div class="match-score">Matches: <span id="matchCount">0</span> / 8</div>
+    <div class="match-grid" id="matchGrid">
+      ${pairs.map((emoji, i) => `
+        <div class="match-card" data-emoji="${emoji}" data-index="${i}" onclick="flipMatchCard(this)">
+          <span class="card-face">${emoji}</span>
+        </div>
+      `).join("")}
+    </div>
+    <div id="matchWin" style="display:none; margin-top:16px; color:#ff6b9d; font-style:italic; font-size:1rem;">
+      You matched everything perfectly. Like you always do with me ❤️
+    </div>
+  `;
+
+  window._matchState = { flipped: [], matched: 0, locked: false };
+}
+
+window.flipMatchCard = function(card){
+  const state = window._matchState;
+  if(state.locked || card.classList.contains("flipped") || card.classList.contains("matched")) return;
+
+  card.classList.add("flipped");
+  state.flipped.push(card);
+
+  if(state.flipped.length === 2){
+    state.locked = true;
+    const [a, b] = state.flipped;
+    if(a.dataset.emoji === b.dataset.emoji && a.dataset.index !== b.dataset.index){
+      // Match
+      setTimeout(() => {
+        a.classList.add("matched");
+        b.classList.add("matched");
+        state.matched++;
+        document.getElementById("matchCount").textContent = state.matched;
+        state.flipped = [];
+        state.locked = false;
+        if(state.matched === 8){
+          document.getElementById("matchWin").style.display = "block";
+        }
+      }, 400);
+    } else {
+      // No match
+      setTimeout(() => {
+        a.classList.add("wrong-shake");
+        b.classList.add("wrong-shake");
+        setTimeout(() => {
+          a.classList.remove("flipped", "wrong-shake");
+          b.classList.remove("flipped", "wrong-shake");
+          state.flipped = [];
+          state.locked = false;
+        }, 450);
+      }, 600);
+    }
+  }
+};
+
+/* ---- TRUTH BOMB ---- */
+const truthQuestions = [
+  { q: "What's one thing about me you'd never change?", answers: {
+    yes: "And I'd never let you try to change it either. That thing you love? That's just me being made for you.",
+    no: "Interesting. You hesitated. That means you already know. ❤️"
+  }},
+  { q: "If I texted you right now — would you smile before you even read it?", answers: {
+    yes: "Good. Because I smiled sending it. This is just what we are now.",
+    no: "Liar. I saw that look on your face. You absolutely would. ❤️"
+  }},
+  { q: "Honestly — do you think about me when I'm not there?", answers: {
+    yes: "I think about you too. More than makes sense. More than I can explain.",
+    no: "Somehow I don't believe that at all. Your face does not match your answer. ❤️"
+  }},
+  { q: "Would you rather fight with me or not talk to me for a whole day?", answers: {
+    yes: "Fighting it is. At least that means we're both fully in it.",
+    no: "See — you chose silence. Which means you'd actually miss me. I knew it."
+  }},
+  { q: "Is there a version of your life where you don't choose me?", answers: {
+    yes: "Careful. That's the only dangerous answer you've given me.",
+    no: "Good. Because in every version of mine — it's always you. Without question."
+  }},
+  { q: "What's the one memory of us that you keep going back to?", answers: {
+    yes: "The beginning. That one moment where everything shifted and we both knew.",
+    no: "You're not ready to say it out loud yet. But I already know. ❤️"
+  }},
+];
+
+let truthIndex = 0;
+
+function renderTruthBomb(el){
+  truthIndex = Math.floor(Math.random() * truthQuestions.length);
+  renderTruthQuestion(el);
+}
+
+function renderTruthQuestion(el){
+  const q = truthQuestions[truthIndex];
+  el.innerHTML = `
+    <h2>Truth Bomb 💣</h2>
+    <p class="game-sub">Omen is asking. No running allowed.</p>
+    <div class="truth-question">"${q.q}"</div>
+    <div class="truth-btns">
+      <button class="truth-btn" onclick="answerTruth('yes')">Yes ❤️</button>
+      <button class="truth-btn" onclick="answerTruth('no')">No...</button>
+    </div>
+    <div class="truth-response" id="truthResp"></div>
+    <button class="wyr-next-btn" id="truthNext" onclick="nextTruth()" style="display:none; margin-top:16px;">
+      Next question →
+    </button>
+  `;
+  window._truthEl = el;
+}
+
+window.answerTruth = function(choice){
+  const q = truthQuestions[truthIndex];
+  const resp = document.getElementById("truthResp");
+  const btns = document.querySelectorAll(".truth-btn");
+  const nextBtn = document.getElementById("truthNext");
+  btns.forEach(b => { b.style.pointerEvents = "none"; b.style.opacity = "0.4"; });
+  resp.textContent = q.answers[choice] || q.answers.yes;
+  setTimeout(() => resp.classList.add("visible"), 100);
+  if(nextBtn) nextBtn.style.display = "inline-block";
+};
+
+window.nextTruth = function(){
+  truthIndex = (truthIndex + 1) % truthQuestions.length;
+  if(window._truthEl) renderTruthQuestion(window._truthEl);
+};
+
+/* ---- WOULD YOU RATHER ---- */
+const wyrQuestions = [
+  {
+    a: "Know exactly what I'm thinking about you right now",
+    b: "Never know but feel it in everything I do",
+    ra: "Knowing is terrifying. Feeling it is the whole point. You chose to *know* me — and honestly, that makes sense.",
+    rb: "Feeling it in everything — that's the smarter answer. Because I show you every single day anyway."
+  },
+  {
+    a: "Have one hour together fully perfect and then it ends",
+    b: "Have a messy, complicated forever with me",
+    ra: "One perfect hour. That's the most heartbreaking answer. But also the most romantic. I'd make it count.",
+    rb: "Messy forever. Correct. We were never going to be clean or easy anyway."
+  },
+  {
+    a: "Read all my old journal entries about you",
+    b: "Never know what I've written but I keep writing",
+    ra: "You want to know. Of course you do. And I've written things about you that would ruin you in the best possible way.",
+    rb: "The mystery version. Wiser. Because what I've written is dangerous territory. ❤️"
+  },
+  {
+    a: "Be the one who loves a little more",
+    b: "Be the one who is loved a little more",
+    ra: "Loving more is brave. And also very you. This doesn't surprise me at all.",
+    rb: "Being loved more. Honestly valid. Sit in it. You deserve every bit of it."
+  },
+  {
+    a: "Fight with me and fix it the same night",
+    b: "Never fight but also never go that deep",
+    ra: "Fight and fix. We chose chaos. We always did. At least it means we care enough to argue.",
+    rb: "Surface-level peace or real messy love — you chose the easy version. I don't believe it for a second. ❤️"
+  },
+];
+
+let wyrIndex = 0;
+
+function renderWouldYouRather(el){
+  wyrIndex = Math.floor(Math.random() * wyrQuestions.length);
+  renderWyrQuestion(el);
+}
+
+function renderWyrQuestion(el){
+  const q = wyrQuestions[wyrIndex];
+  el.innerHTML = `
+    <h2>Would You Rather 🔥</h2>
+    <p class="game-sub">Pick one. No explaining yourself.</p>
+    <div class="wyr-options">
+      <div class="wyr-opt" onclick="chooseWyr(this, 'a')">${q.a}</div>
+      <div class="wyr-opt" onclick="chooseWyr(this, 'b')">${q.b}</div>
+    </div>
+    <div class="wyr-result" id="wyrResult"></div>
+    <button class="wyr-next-btn" id="wyrNext" onclick="nextWyr()">Next →</button>
+  `;
+  window._wyrEl = el;
+}
+
+window.chooseWyr = function(el, choice){
+  const q = wyrQuestions[wyrIndex];
+  document.querySelectorAll(".wyr-opt").forEach(o => {
+    o.style.pointerEvents = "none";
+    o.style.opacity = "0.4";
+  });
+  el.style.opacity = "1";
+  el.classList.add("chosen");
+
+  const result = document.getElementById("wyrResult");
+  const next = document.getElementById("wyrNext");
+  result.textContent = choice === "a" ? q.ra : q.rb;
+  setTimeout(() => result.classList.add("visible"), 100);
+  if(next) next.classList.add("visible");
+};
+
+window.nextWyr = function(){
+  wyrIndex = (wyrIndex + 1) % wyrQuestions.length;
+  if(window._wyrEl) renderWyrQuestion(window._wyrEl);
+};
+
+/* =========================
+   CLOSE GAME MODAL ON BACKDROP CLICK
+========================= */
+
+document.addEventListener("click", function(e){
+  const modal = document.getElementById("gameModal");
+  if(modal && e.target === modal){
+    closeGame();
+  }
+});
+/* =========================
+   PASTE THIS AT THE BOTTOM OF app_additions.js
+   (after the closeGame backdrop click handler)
+
+   DYNAMIC TIMELINE SYSTEM
+   — Relationship start: 27 October 2024
+   — Milestones auto-unlock based on real date
+   — Future milestones stay locked until their date arrives
+   — New year milestones auto-generate forever
+========================= */
+
+/* =========================
+   RELATIONSHIP START DATE
+========================= */
+
+const REL_START = new Date("2024-10-27T00:00:00");
+
+/* =========================
+   RELATIONSHIP DURATION HELPERS
+========================= */
+
+function getRelDuration(){
+  const now = new Date();
+  const ms = now - REL_START;
+
+  const totalDays = Math.floor(ms / (1000 * 60 * 60 * 24));
+  const years = Math.floor(totalDays / 365);
+  const months = Math.floor((totalDays % 365) / 30);
+  const days = totalDays % 30;
+
+  let parts = [];
+  if(years > 0) parts.push(`${years} year${years > 1 ? "s" : ""}`);
+  if(months > 0) parts.push(`${months} month${months > 1 ? "s" : ""}`);
+  if(days > 0 || parts.length === 0) parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+
+  return {
+    text: parts.join(", "),
+    totalDays,
+    years,
+    months
+  };
+}
+
+/* =========================
+   MILESTONE DEFINITIONS
+   Each milestone has a `unlockDate` — Date object.
+   If unlockDate <= today: UNLOCKED (show fully)
+   If unlockDate <= today + 60 days: UNLOCKING SOON (teased)
+   If unlockDate > today + 60 days: LOCKED (blurred)
+========================= */
+
+function buildMilestones(){
+  const start = REL_START;
+
+  // Helper: add months to a date
+  function addMonths(d, m){
+    const r = new Date(d);
+    r.setMonth(r.getMonth() + m);
+    return r;
+  }
+
+  function addYears(d, y){
+    const r = new Date(d);
+    r.setFullYear(r.getFullYear() + y);
+    return r;
+  }
+
+  function fmt(d){
+    return d.toLocaleDateString("en-IN", { year:"numeric", month:"long", day:"numeric" });
+  }
+
+  function fmtYear(d){
+    return d.getFullYear().toString();
+  }
+
+  const milestones = [];
+
+  // ─── FIXED EARLY MILESTONES ───────────────────────────────
+
+  milestones.push({
+    unlockDate: start,
+    year: fmtYear(start),
+    title: "We Found Trouble ❤️",
+    desc: "Two strangers becoming dangerously attached. The beginning of an addiction neither of us wanted to escape.",
+    secret: "You walked in and ruined every standard I ever had. Completely. Irreversibly. And I'd let you do it again.",
+    gameIndex: 0,
+    icon: "❤️"
+  });
+
+  milestones.push({
+    unlockDate: addMonths(start, 1),
+    year: fmtYear(addMonths(start, 1)),
+    title: "The First Time We Met 🌙",
+    desc: "The nervous tension. The first touch. The first time wanting someone that intensely.",
+    secret: "I remember thinking — this is going to be dangerous. And then choosing you anyway. Every single time after that.",
+    gameIndex: 1,
+    icon: "🌙"
+  });
+
+  milestones.push({
+    unlockDate: addMonths(start, 6),
+    year: fmtYear(addMonths(start, 6)),
+    title: "Six Months Deep 🔥",
+    desc: "Half a year in. Still completely consumed. Late nights, rough love, soft moments after.",
+    secret: "Late nights where I forgot where I ended and you began. Messy, tangled, completely lost in you — the best kind of lost.",
+    gameIndex: 2,
+    icon: "🔥"
+  });
+
+  // ─── DYNAMIC YEARLY MILESTONES ────────────────────────────
+  // Generates for year 1, 2, 3... up to 10 years from start
+
+  const yearlyData = [
+    {
+      title: "One Year ❤️",
+      desc: "A whole year of choosing each other. Of surviving every season together. Still obsessed.",
+      secret: "One year and I still reach for you first. In the dark. In every quiet moment that belongs only to us.",
+      gameIndex: 3,
+      icon: "🥂"
+    },
+    {
+      title: "Two Years — Still Starving ❤️",
+      desc: "Still obsessed. Still attached. Still wanting you in every possible way.",
+      secret: "Two years and the craving only got worse. That's not a problem. That's just what we are.",
+      gameIndex: 4,
+      icon: "💋"
+    },
+    {
+      title: "Three Years of This Beautiful Chaos 🌹",
+      desc: "Three years of dangerously loving each other. Of becoming each other's permanent habit.",
+      secret: "Three years down and I still don't have the words for what this is. I just know I'm not done.",
+      gameIndex: 0,
+      icon: "🌹"
+    },
+    {
+      title: "Four Years — Irreversibly Yours ❤️",
+      desc: "Four years. Four versions of us. Every one of them worth it.",
+      secret: "Four years and every argument, every soft night, every ridiculous moment made me more certain. It's you.",
+      gameIndex: 1,
+      icon: "❤️‍🔥"
+    },
+    {
+      title: "Five Years — Half a Decade of Us 🔥",
+      desc: "Half a decade of choosing the same person. Of turning into each other slowly.",
+      secret: "Five years. I'd do every single day of it again. Even the hard ones. Especially the hard ones.",
+      gameIndex: 2,
+      icon: "✨"
+    },
+    {
+      title: "Six Years Deep 💌",
+      desc: "Six years of secrets, inside jokes, and a love that keeps getting more complicated in the best way.",
+      secret: "Six years and you still surprise me. That's not something that happens to just anyone.",
+      gameIndex: 3,
+      icon: "💌"
+    },
+    {
+      title: "Seven Years — Still Addicted 🌙",
+      desc: "Seven years of being each other's most dangerous comfort zone.",
+      secret: "Seven years and this addiction shows no signs of fading. I've stopped wanting it to.",
+      gameIndex: 4,
+      icon: "🌙"
+    },
+    {
+      title: "Eight Years — Written In Everything 🔥",
+      desc: "Eight years of being woven into each other's story so deeply neither of us could tell where one ends.",
+      secret: "Eight years and I still can't explain you to anyone who asks. Because some things aren't meant to be explained.",
+      gameIndex: 0,
+      icon: "🔥"
+    },
+    {
+      title: "Nine Years — Almost A Decade ❤️",
+      desc: "Almost ten years of this. Of us. Of the specific chaos only we could build.",
+      secret: "Nine years in and I love you with the same hunger I had at the start. More, actually.",
+      gameIndex: 1,
+      icon: "❤️"
+    },
+    {
+      title: "Ten Years — A Whole Decade ❤️‍🔥",
+      desc: "Ten years. A full decade of choosing each other every single day. Extraordinary.",
+      secret: "Ten years and this still doesn't feel like enough time. That's the most romantic thing I've ever admitted.",
+      gameIndex: 2,
+      icon: "🥂"
+    },
+  ];
+
+  for(let y = 1; y <= 10; y++){
+    const anniversaryDate = addYears(start, y);
+    const data = yearlyData[y - 1] || {
+      title: `${y} Years Together ❤️`,
+      desc: `${y} years of choosing each other. Of becoming something neither of us could have predicted.`,
+      secret: `${y} years and I still don't have the right word for what you are to me. But I'm not stopping.`,
+      gameIndex: y % 5,
+      icon: "❤️"
+    };
+
+    milestones.push({
+      unlockDate: anniversaryDate,
+      year: fmtYear(anniversaryDate),
+      ...data
+    });
+  }
+
+  // ─── BIRTHDAY MILESTONE (Budhdhu's birthday) ──────────────
+  // Adjust this date to her actual birthday
+  // This adds every year automatically
+  const BIRTHDAY_MONTH = 9; // September = 9 (0-indexed)
+  const BIRTHDAY_DAY = 23;  // ← CHANGE THIS to her actual birthday day
+
+  const now = new Date();
+  let bdayYear = now.getFullYear();
+  let bdayThisYear = new Date(bdayYear, BIRTHDAY_MONTH, BIRTHDAY_DAY);
+  if(bdayThisYear < REL_START) bdayYear++;
+
+  // Add birthday milestones for the next 8 years
+  for(let i = 0; i < 8; i++){
+    const bday = new Date(bdayYear + i, BIRTHDAY_MONTH, BIRTHDAY_DAY);
+    if(bday >= REL_START){
+      milestones.push({
+        unlockDate: bday,
+        year: (bdayYear + i).toString(),
+        title: "Happy Birthday, Baby 🎂",
+        desc: `Another year of you. Another year of us getting more impossible to explain to anyone outside this.`,
+        secret: `Happy birthday to the person who made me believe that some addictions are worth keeping. I'd choose this chaos — with you — every time.`,
+        gameIndex: 4,
+        icon: "🎂",
+        isBirthday: true
+      });
+    }
+  }
+
+  // Sort all milestones by unlockDate
+  milestones.sort((a, b) => a.unlockDate - b.unlockDate);
+
+  return milestones;
+}
+
+/* =========================
+   RENDER DYNAMIC TIMELINE
+========================= */
+
+function renderDynamicTimeline(){
+  const container = document.getElementById("dynamicTimeline");
+  if(!container) return;
+
+  // Clear existing static items (keep the cord)
+  const cord = container.querySelector(".timeline-cord");
+  container.innerHTML = "";
+  if(cord) container.appendChild(cord);
+
+  const milestones = buildMilestones();
+  const now = new Date();
+  const soonThreshold = 60 * 24 * 60 * 60 * 1000; // 60 days in ms
+
+  milestones.forEach((m, i) => {
+    const isUnlocked = m.unlockDate <= now;
+    const isSoon = !isUnlocked && (m.unlockDate - now) <= soonThreshold;
+    const isLocked = !isUnlocked && !isSoon;
+
+    // Check if unlocked within last 7 days (newly unlocked)
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    const isNewlyUnlocked = isUnlocked && (now - m.unlockDate) <= sevenDays;
+
+    const item = document.createElement("div");
+    item.className = [
+      "timeline-item",
+      isLocked ? "locked" : "",
+      isSoon ? "unlocking-soon" : "",
+      isNewlyUnlocked ? "newly-unlocked" : ""
+    ].filter(Boolean).join(" ");
+
+    item.setAttribute("data-index", i);
+
+    if(isUnlocked && !isLocked){
+      item.setAttribute("onclick", "expandTimeline(this)");
+      item.style.cursor = "pointer";
+    }
+
+    // Format unlock date for locked/soon hints
+    const unlockStr = m.unlockDate.toLocaleDateString("en-IN", {
+      day: "numeric", month: "long", year: "numeric"
+    });
+
+    item.innerHTML = `
+      <div class="timeline-dot"></div>
+      <div class="timeline-content">
+        <div class="timeline-year">${m.year}</div>
+        <h3>${isLocked ? "🔒 Coming Soon" : m.title}</h3>
+        <p>${isLocked
+          ? "This chapter hasn't been written yet. But it's already yours."
+          : m.desc
+        }</p>
+        ${isLocked ? `<span class="locked-hint">unlocks ${unlockStr}</span>` : ""}
+        ${isSoon ? `<span class="unlocking-hint">✦ unlocking ${unlockStr}</span>` : ""}
+        ${isUnlocked && m.secret ? `
+          <div class="timeline-expand-card">
+            <p class="timeline-secret">${m.secret}</p>
+            <div class="timeline-game-btn"
+              onclick="event.stopPropagation(); startTimelineGame(${m.gameIndex})">
+              💌 Unlock the secret
+            </div>
+          </div>
+        ` : ""}
+      </div>
+    `;
+
+    container.appendChild(item);
+  });
+
+  // Update the duration badge
+  const dur = getRelDuration();
+  const badge = document.getElementById("relDurationText");
+  if(badge) badge.textContent = dur.text;
+}
+
+/* =========================
+   ANIMATED CORD — scroll-linked
+========================= */
+
+function initTimelineCord(){
+  const fill = document.getElementById("timelineCordFill");
+  const bead = document.getElementById("timelineCordBead");
+  const timeline = document.getElementById("dynamicTimeline");
+  if(!fill || !bead || !timeline) return;
+
+  function update(){
+    const rect = timeline.getBoundingClientRect();
+    const totalH = timeline.offsetHeight;
+    const winH = window.innerHeight;
+    let pct = ((winH - rect.top) / totalH) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+
+    fill.style.height = pct + "%";
+    bead.style.top = pct + "%";
+  }
+
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+}
+
+/* =========================
+   BOOT — call after DOM loads
+========================= */
+
+// Override the old initTimelineProgress function
+window.initTimelineProgress = function(){
+  // replaced by initTimelineCord
+};
+
+// Run after splash + profile select
+document.addEventListener("DOMContentLoaded", () => {
+  // Render once on load (even before profile — just in case)
+  setTimeout(() => {
+    renderDynamicTimeline();
+    initTimelineCord();
+  }, 100);
+});
+
+// Also re-render after profile is selected (homeScreen shown)
+const _origSelectProfile = window.selectProfile;
+window.selectProfile = function(profile){
+  _origSelectProfile(profile);
+  setTimeout(() => {
+    renderDynamicTimeline();
+    initTimelineCord();
+  }, 700);
+};
+
+// Re-render cord on resize (mobile/desktop switch)
+window.addEventListener("resize", () => {
+  initTimelineCord();
+});
