@@ -976,27 +976,169 @@ window.closeCreator = function(){ document.getElementById("creatorPanel").classL
    CREATE MEMORY
 ========================= */
 window.createMemory = async function(){
-  const title = document.getElementById("memoryTitle").value;
-  const desc  = document.getElementById("memoryDescription").value;
-  const input = document.getElementById("memoryImage");
-  if(!title||!desc||!input.files[0]){ alert("Fill all fields ❤️"); return; }
 
-  showUploadProgress("Creating your memory...");
+  const title =
+  document.getElementById(
+    "memoryTitle"
+  ).value;
+
+  const description =
+  document.getElementById(
+    "memoryDescription"
+  ).value;
+
+  const imageInput =
+  document.getElementById(
+    "memoryImage"
+  );
+
+  const files =
+  Array.from(imageInput.files);
+
+  if(
+    !title ||
+    !description ||
+    files.length === 0
+  ){
+
+    alert(
+      "Fill all fields ❤️"
+    );
+
+    return;
+  }
+
+  showUploadProgress(
+    "Creating your memory..."
+  );
+
   try{
-    const data     = await uploadToCloudinary(input.files[0], pct=> setUploadProgress(pct,"Uploading cover..."));
-    const imageURL = data.secure_url;
-    setUploadProgress(100,"Saving...");
-    await addDoc(collection(db,"memories"),{
-      id: title.toLowerCase().replaceAll(" ","-"),
-      title, description:desc, hero:imageURL,
-      images:[imageURL], videos:[], tags:["New"], opens:0, favoriteCount:0
-    });
+
+    let uploadedImages = [];
+
+    let uploadedVideos = [];
+
+    /* LOOP FILES */
+
+    for(let i=0;i<files.length;i++){
+
+      const file = files[i];
+
+      const type =
+      file.type.startsWith("video/")
+      ? "video"
+      : "image";
+
+      setUploadProgress(
+
+        ((i/files.length)*100),
+
+        `Uploading ${i+1} / ${files.length}`
+      );
+
+      const data =
+      await uploadToCloudinary(
+        file,
+        type
+      );
+
+      const url =
+      data.secure_url;
+
+      /* VIDEO */
+
+      if(type === "video"){
+
+        uploadedVideos.push(url);
+
+      }else{
+
+        uploadedImages.push(url);
+      }
+    }
+
+    setUploadProgress(
+      100,
+      "Saving memory..."
+    );
+
+    /* HERO */
+
+    const hero =
+    uploadedImages[0]
+    || uploadedVideos[0];
+
+    /* MEMORY */
+
+    const newMemory = {
+
+      id:
+      title.toLowerCase()
+      .replaceAll(" ","-"),
+
+      title,
+
+      description,
+
+      hero,
+
+      images:
+      uploadedImages,
+
+      videos:
+      uploadedVideos,
+
+      tags:["New"],
+
+      opens:0,
+
+      favoriteCount:0
+    };
+
+    /* FIRESTORE */
+
+    await addDoc(
+
+      collection(db,"memories"),
+
+      newMemory
+    );
+
     await refreshApp();
-    hideUploadProgress(); closeCreator();
-    ["memoryTitle","memoryDescription","memoryImage"].forEach(id=>{ document.getElementById(id).value=""; });
-    showHome();
-  }catch(e){ hideUploadProgress(); alert("Upload failed ❤️ — "+e.message); }
-};
+
+    hideUploadProgress();
+
+    closeCreator();
+
+    /* RESET */
+
+    document.getElementById(
+      "memoryTitle"
+    ).value = "";
+
+    document.getElementById(
+      "memoryDescription"
+    ).value = "";
+
+    document.getElementById(
+      "memoryImage"
+    ).value = "";
+
+    alert(
+      "Memory Created ❤️"
+    );
+
+  }catch(error){
+
+    console.log(error);
+
+    hideUploadProgress();
+
+    alert(
+      "Upload failed ❤️"
+    );
+  }
+}
 
 /* =========================
    DELETE MEMORY
