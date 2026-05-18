@@ -15,13 +15,14 @@ body {
 }
 @media (hover: none) {
   body { cursor: auto; }
-  #customCursor, #customCursorRing { display: none !important; }
+  #customCursor , #customCursorRing { display: none !important; }
 }
 
 /* =========================
    CUSTOM CURSOR
 ========================= */
 #customCursor {
+  z-index: 2147483647 !important;
   position: fixed;
   width: 10px; height: 10px;
   border-radius: 50%;
@@ -33,6 +34,7 @@ body {
   will-change: left, top;
 }
 #customCursorRing {
+  z-index: 2147483646 !important;
   position: fixed;
   width: 36px; height: 36px;
   border-radius: 50%;
@@ -749,15 +751,23 @@ button.play-btn.hero-play:active { transform: translateY(-1px) scale(0.99); }
 /* =========================
    GALLERY GRID (inside memory detail)
 ========================= */
+/* MASONRY / PINTEREST GALLERY — wraps naturally, each card keeps its true aspect ratio */
 .gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  column-count: 5;
+  column-gap: 12px;
   width: 100%; padding: 4px 0 20px;
+  /* perf: skip layout/paint for cards offscreen */
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 800px;
 }
 .gallery-grid .gallery-card {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  display: block;
   min-width: 0 !important; max-width: none !important;
-  width: 100% !important; height: 180px !important;
+  width: 100% !important; height: auto !important;
+  margin: 0 0 12px !important;
   border-radius: 14px !important; overflow: hidden !important;
   position: relative !important; cursor: pointer !important;
   background: #111 !important; flex-shrink: unset !important;
@@ -770,7 +780,7 @@ button.play-btn.hero-play:active { transform: translateY(-1px) scale(0.99); }
 .gallery-grid .gallery-card:nth-child(n+6){ animation-delay:0.15s; }
 
 .gallery-grid .gallery-card img {
-  width:100%!important; height:100%!important;
+  width:100%!important; height:auto!important;
   object-fit:cover!important; display:block!important;
   transition:transform 0.5s ease, filter 0.5s ease!important;
   border-radius:0!important;
@@ -820,15 +830,27 @@ button.play-btn.hero-play:active { transform: translateY(-1px) scale(0.99); }
 /* =========================
    VIDEO GRID (inside memory detail)
 ========================= */
+/* MASONRY VIDEO GRID */
 .video-grid-layout {
-  display:grid!important;
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  gap:14px; width:100%; overflow:visible!important; padding-bottom:8px;
+  column-count: 4;
+  column-gap: 14px;
+  width:100%; overflow:visible!important; padding-bottom:8px;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 600px;
 }
 .video-grid-layout .gallery-card.video-card {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  display: block;
   min-width:0!important; max-width:none!important; width:100%!important;
-  height:190px!important; border-radius:16px!important; overflow:hidden!important;
+  height:auto!important; margin:0 0 14px!important;
+  border-radius:16px!important; overflow:hidden!important;
   position:relative!important; animation:gridCardIn 0.4s ease both;
+}
+.video-grid-layout .gallery-card.video-card video {
+  width:100%!important; height:auto!important; display:block!important;
+  aspect-ratio: 16 / 10;
+  object-fit:cover!important;
 }
 
 /* =========================
@@ -1132,8 +1154,8 @@ button.play-btn.hero-play:active { transform: translateY(-1px) scale(0.99); }
   /* Memories grid 2 col */
   .memories-grid { grid-template-columns:repeat(2,1fr); gap:16px; }
   /* Gallery grid 4 col */
-  .gallery-grid { grid-template-columns:repeat(4,1fr)!important; gap:9px; }
-  .gallery-grid .gallery-card { height:150px!important; }
+  .gallery-grid { column-count:4!important; column-gap:9px!important; }
+  .gallery-grid .gallery-card { height:auto!important; margin-bottom:9px!important; }
 }
 
 @media (max-width: 768px) {
@@ -1202,12 +1224,12 @@ button.play-btn.hero-play:active { transform: translateY(-1px) scale(0.99); }
   .memory-grid-overlay .memory-desc { display:none; }
 
   /* Gallery grid 3 col mobile */
-  .gallery-grid { grid-template-columns:repeat(3,1fr)!important; gap:7px!important; }
-  .gallery-grid .gallery-card { height:120px!important; border-radius:10px!important; }
+  .gallery-grid { column-count:3!important; column-gap:7px!important; }
+  .gallery-grid .gallery-card { height:auto!important; border-radius:10px!important; margin-bottom:7px!important; }
 
   /* Video grid */
-  .video-grid-layout { grid-template-columns:repeat(2,1fr)!important; gap:8px!important; }
-  .video-grid-layout .gallery-card.video-card { height:140px!important; }
+  .video-grid-layout { column-count:2!important; column-gap:8px!important; }
+  .video-grid-layout .gallery-card.video-card { height:auto!important; margin-bottom:8px!important; }
 
   /* Upload queue */
   #uploadQueue { bottom:80px; left:10px; width:calc(100vw - 20px); max-width:300px; }
@@ -1220,8 +1242,8 @@ button.play-btn.hero-play:active { transform: translateY(-1px) scale(0.99); }
   .card { min-width:130px!important; max-width:130px!important; height:205px!important; }
   .hero-content h1 { font-size:1.65rem!important; }
   .memories-grid { grid-template-columns:repeat(2,1fr)!important; gap:8px!important; }
-  .gallery-grid { grid-template-columns:repeat(2,1fr)!important; }
-  .gallery-grid .gallery-card { height:110px!important; }
+  .gallery-grid { column-count:2!important; }
+  .gallery-grid .gallery-card { height:auto!important; }
   .game-modal-box { padding:22px 12px 26px!important; }
   .love-meter-pct { font-size:2.4rem!important; }
   .bored-header h2 { font-size:1.2rem!important; }
@@ -1235,4 +1257,78 @@ button.play-btn.hero-play:active { transform: translateY(-1px) scale(0.99); }
   .game-card-icon { animation:none!important; }
   .badge-heart    { animation:none!important; }
   .reveal-on-scroll { opacity:1!important; transform:none!important; }
+}
+
+/* =========================
+   PERF PASS (added)
+========================= */
+/* Skip rendering work for offscreen sections — huge win on long home pages */
+.section,
+.timeline-section,
+.bored-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 600px;
+}
+/* Promote slideshow layers to their own GPU layer for buttery crossfade */
+.hero-slide-layer { will-change: opacity; transform: translateZ(0); }
+/* Lazy images decode off the main thread */
+img { content-visibility: auto; }
+/* =========================
+   SECURE MEMORY OPTION
+========================= */
+
+.secure-memory-option{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:10px;
+
+  color:#ddd;
+
+  font-size:0.9rem;
+}
+
+.secure-memory-option input{
+
+  width:18px;
+
+  height:18px;
+}
+/* =========================
+   SECURE PASSWORD INPUT
+========================= */
+
+#securePasswordWrap{
+
+  margin-top:12px;
+}
+
+#securePassword{
+
+  width:100%;
+
+  padding:14px 16px;
+
+  border:none;
+
+  border-radius:14px;
+
+  background:#1f1f1f;
+
+  color:white;
+
+  font-size:0.95rem;
+
+  outline:none;
+}
+
+#securePassword::placeholder{
+
+  color:#888;
+}
+#upOv *{
+
+  cursor:none !important;
 }
