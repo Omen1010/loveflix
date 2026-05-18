@@ -19,31 +19,7 @@
   <div class="splash-logo">LOVEFLIX</div>
 </div>
 
-<!-- PROFILE PICKER -->
-<div id="profileScreen" class="profile-screen" style="display:none;">
-  <div class="profile-screen-inner">
-    <h1 class="profile-heading">Who's watching?</h1>
-    <div class="profile-grid">
-      <div class="profile-card" onclick="selectProfile('Omen')">
-        <div class="profile-avatar avatar-omen">O</div>
-        <span class="profile-name">Omen</span>
-      </div>
-      <div class="profile-card" onclick="selectProfile('Budhdhu')">
-        <div class="profile-avatar avatar-budhdhu">B</div>
-        <span class="profile-name">Budhdhu</span>
-      </div>
-      <div class="profile-card" onclick="selectProfile('Guest')">
-        <div class="profile-avatar avatar-guest">
-          <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
-            <circle cx="22" cy="17" r="8" fill="rgba(255,255,255,0.5)"/>
-            <ellipse cx="22" cy="36" rx="14" ry="8" fill="rgba(255,255,255,0.5)"/>
-          </svg>
-        </div>
-        <span class="profile-name">Guest</span>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- (legacy profile picker removed — auth-aware system handles profiles) -->
 
 <!-- SECRET TRIGGER -->
 <div class="secret-trigger" onclick="secretTap()">🌙</div>
@@ -54,7 +30,7 @@
   <div class="nav-right">
     <span id="profileBadge" class="profile-badge"></span>
     <button class="nav-btn" id="privateVaultBtn" onclick="showPrivate()">Private Vault 🔒</button>
-    <button class="nav-btn nav-btn-ghost" onclick="switchProfile()">Switch</button>
+    <button class="nav-btn nav-btn-ghost" onclick="handleLogout()">Sign Out</button>
   </div>
 </nav>
 
@@ -67,6 +43,13 @@
     <h2>Create New Memory ✨</h2>
     <input type="text" id="memoryTitle" placeholder="Memory Title">
     <textarea id="memoryDescription" placeholder="Memory Description"></textarea>
+    <label class="secure-memory-option">
+  <input type="checkbox" id="secureMemory" onchange="toggleSecureMemory(this)">
+  <div id="securePasswordWrap" style="display:none;">
+  <input type="password" id="securePassword" placeholder="Create Love Password">
+</div>
+  🔒 Make this a secure memory
+</label>
     <input type="file" id="memoryImage" accept="image/*,video/*" multiple>
     <div class="creator-actions">
       <button onclick="createMemory()">Create</button>
