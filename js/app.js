@@ -33,6 +33,25 @@ const VAULT_NAMES   = ["Omen","Budhdhu"];
 const LEGACY_OWNERS = ["omenagarwal000@gmail.com","sahatitli2006@gmail.com"]; // e.g. ["you@gmail.com","partner@gmail.com"]
 
 /* ─────────────────────────────────────────
+   CLOUDINARY URL OPTIMIZER (perf)
+   - injects f_auto (best format: avif/webp), q_auto (smart quality),
+     w_<width> (responsive size). Cuts payload 5-10×.
+───────────────────────────────────────── */
+function cldOpt(url, w){
+  if(!url || typeof url!=="string") return url;
+  if(!/res\.cloudinary\.com\//.test(url)) return url;
+  if(/\/upload\/(f_|q_|w_|h_)/.test(url)) return url; // already transformed
+  const t = `f_auto,q_auto${w?`,w_${w}`:""}`;
+  return url.replace("/upload/", `/upload/${t}/`);
+}
+function cldPoster(url){
+  if(!url || !/res\.cloudinary\.com\//.test(url)) return "";
+  return url.replace(/\.(mp4|mov|webm|m4v)(\?.*)?$/i,".jpg")
+            .replace("/upload/","/upload/f_auto,q_auto,w_500,so_0/");
+}
+
+
+/* ─────────────────────────────────────────
    FIRESTORE PATHS  (user-scoped)
 ───────────────────────────────────────── */
 const memoriesCol  = () => collection(db,"users",currentUser.uid,"memories");
@@ -427,14 +446,15 @@ function initCursor(){
 function initParticles(){
   const c=document.getElementById("heroParticles"); if(!c) return;
   const spawn=()=>{
-    if(c.children.length>=8) return;
+    const MAX_P = (window.innerWidth<768||matchMedia("(prefers-reduced-motion:reduce)").matches)?3:8; if(c.children.length>=MAX_P) return;
     const p=document.createElement("div"); p.className="hero-particle";
     const sz=2+Math.random()*3, dur=10+Math.random()*8;
     p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;animation-duration:${dur}s;opacity:${.2+Math.random()*.35};`;
     c.appendChild(p); setTimeout(()=>p.remove(),dur*1000);
   };
-  for(let i=0;i<8;i++) spawn();
-  setInterval(spawn,2000);
+  const MAX0 = (window.innerWidth<768||matchMedia("(prefers-reduced-motion:reduce)").matches)?3:8;
+  for(let i=0;i<MAX0;i++) spawn();
+  setInterval(spawn, window.innerWidth<768?3500:2000);
 }
 
 /* ─────────────────────────────────────────
@@ -704,7 +724,7 @@ function addRecent(memory){
 }
 function genContinueWatching(){
   const row=document.getElementById("continueWatching"); if(!row) return;
-  row.innerHTML=recentMemories.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${m.hero}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>Continue Watching ❤️</p></div></div>`).join("");
+  row.innerHTML=recentMemories.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>Continue Watching ❤️</p></div></div>`).join("");
 }
 
 /* ─────────────────────────────────────────
@@ -718,7 +738,7 @@ window.toggleFavorite=function(id){
 };
 function genFavorites(){
   const row=document.getElementById("favoriteRows"); if(!row) return;
-  row.innerHTML=favoriteMemories.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${m.hero}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3></div></div>`).join("");
+  row.innerHTML=favoriteMemories.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3></div></div>`).join("");
 }
 
 /* ─────────────────────────────────────────
@@ -728,7 +748,7 @@ function genTopMemories(){
   const row=document.getElementById("topMemories"); if(!row) return;
   const top=[...memories].filter(m=>m.opens>0).sort((a,b)=>b.opens-a.opens).slice(0,8);
   row.innerHTML=top.length
-    ? top.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${m.hero}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>🔥 ${m.opens} replays</p></div></div>`).join("")
+    ? top.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>🔥 ${m.opens} replays</p></div></div>`).join("")
     : '<p style="opacity:.4;padding:16px;font-size:.88rem;font-style:italic;">Open some memories to see them here ❤️</p>';
 }
 
@@ -749,7 +769,7 @@ function appendRows(){
   const old=rows.querySelector(".load-more-wrap"); if(old) old.remove();
   slice.forEach(m=>{
     const sec=document.createElement("section"); sec.className="section reveal-on-scroll";
-    sec.innerHTML=`<h2>${m.title}</h2><div class="netflix-row"><div class="card" onclick="openMemory('${m.id}')"><img src="${m.hero}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>${m.description}</p><div class="card-actions"><button onclick="event.stopPropagation();toggleFavorite('${m.id}')">❤️ Fav</button><button onclick="event.stopPropagation();editMemory('${m.id}')">✏️ Edit</button><button class="delete-btn" onclick="event.stopPropagation();deleteMemory('${m.docId}')">🗑</button></div></div></div></div>`;
+    sec.innerHTML=`<h2>${m.title}</h2><div class="netflix-row"><div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>${m.description}</p><div class="card-actions"><button onclick="event.stopPropagation();toggleFavorite('${m.id}')">❤️ Fav</button><button onclick="event.stopPropagation();editMemory('${m.id}')">✏️ Edit</button><button class="delete-btn" onclick="event.stopPropagation();deleteMemory('${m.docId}')">🗑</button></div></div></div></div>`;
     rows.appendChild(sec);
   });
   _rowsLoaded=end;
@@ -806,13 +826,13 @@ function renderMemory(memory){
 
   const vids=memory.videos||[];
   const vidHTML=vids.length
-    ?`<div class="video-grid-layout">${vids.map((v,vi)=>{const f=favoriteVideos.includes(v);return`<div class="card gallery-card video-card" onclick="openVideo('${v}')"><video src="${v}" muted playsinline preload="metadata"></video><div class="play-badge">▶</div><button class="img-delete-btn" onclick="event.stopPropagation();deleteVid(${vi})">🗑</button><button class="fav-btn" onclick="event.stopPropagation();toggleVidFav('${v}')">${f?"❤️":"🤍"}</button><div class="card-overlay"><h3>${memory.title}</h3><p>Video ${vi+1}/${vids.length}</p></div></div>`;}).join("")}</div>`
+    ?`<div class="video-grid-layout">${vids.map((v,vi)=>{const f=favoriteVideos.includes(v);return`<div class="card gallery-card video-card" onclick="openVideo('${v}')"><video src="${v}" muted playsinline preload="none" poster="${cldPoster(v)}"></video><div class="play-badge">▶</div><button class="img-delete-btn" onclick="event.stopPropagation();deleteVid(${vi})">🗑</button><button class="fav-btn" onclick="event.stopPropagation();toggleVidFav('${v}')">${f?"❤️":"🤍"}</button><div class="card-overlay"><h3>${memory.title}</h3><p>Video ${vi+1}/${vids.length}</p></div></div>`;}).join("")}</div>`
     :'<p style="opacity:.5;padding:16px 0;font-style:italic;font-size:.9rem;">No videos yet.</p>';
 
-  const recs=memories.filter(m=>m.id!==memory.id).slice(0,8).map(r=>`<div class="card" onclick="openMemory('${r.id}')"><img src="${r.hero}" loading="lazy" decoding="async" alt="${r.title}"><div class="card-overlay"><h3>${r.title}</h3></div></div>`).join("");
+  const recs=memories.filter(m=>m.id!==memory.id).slice(0,8).map(r=>`<div class="card" onclick="openMemory('${r.id}')"><img src="${cldOpt(r.hero,600)}" loading="lazy" decoding="async" alt="${r.title}"><div class="card-overlay"><h3>${r.title}</h3></div></div>`).join("");
 
   content.innerHTML=`
-  <section class="hero" style="background-image:url('${memory.hero}')">
+  <section class="hero" style="background-image:url('${cldOpt(memory.hero,1600)}')">
     <div class="overlay"></div>
     <div class="hero-content">
       <h1>${memory.title}</h1><p>${memory.description}</p>
@@ -844,7 +864,7 @@ window._renderGal=function(){
 
   const cards=slice.map((img,li)=>{
     const gi=start+li;
-    return`<div class="card gallery-card" onclick="openGallery(window._gAll,${gi})"><img src="${img}" loading="lazy" decoding="async" alt="Image ${gi+1}"><button class="img-delete-btn" onclick="event.stopPropagation();deleteImg(${gi})">🗑</button><div class="card-overlay"><p>${gi+1}/${total}</p></div></div>`;
+    return`<div class="card gallery-card" onclick="openGallery(window._gAll,${gi})"><img src="${cldOpt(img,700)}" loading="lazy" decoding="async" alt="Image ${gi+1}"><button class="img-delete-btn" onclick="event.stopPropagation();deleteImg(${gi})">🗑</button><div class="card-overlay"><p>${gi+1}/${total}</p></div></div>`;
   }).join("");
 
   const pag=pages>1?`<div class="gallery-pagination"><button class="gallery-page-btn" onclick="window._gPage--;window._renderGal()" ${page===0?"disabled":""}>← Prev</button><span class="gallery-page-info">${page+1}/${pages} · ${start+1}–${end} of ${total}</span><button class="gallery-page-btn" onclick="window._gPage++;window._renderGal()" ${page>=pages-1?"disabled":""}>Next →</button></div>`:"";
