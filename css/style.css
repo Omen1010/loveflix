@@ -1332,3 +1332,107 @@ img { content-visibility: auto; }
 
   cursor:none !important;
 }
+/* =========================
+   PERF + SMOOTHNESS (added)
+========================= */
+/* Skip offscreen rendering on heavy sections */
+.section, .memories-section, .bored-section, .timeline-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 700px;
+}
+/* GPU-promote big animated layers */
+.card, .memory-grid-card, .gallery-card, .hero-slide-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+/* Image rendering hint for downscaled thumbs */
+.card img, .memory-grid-card img, .gallery-card img { image-rendering: auto; }
+/* Smoother momentum scroll on iOS */
+.netflix-row, .gallery-grid { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+
+/* Honor reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+    scroll-behavior: auto !important;
+  }
+  .hero-particle, .hero-marquee, .badge-heart { display: none !important; }
+}
+
+/* Mobile: kill expensive blurs (massive paint cost on phones) */
+@media (max-width: 768px) {
+  .viewer, .timeline-game-modal, .game-modal, .creator-panel,
+  .password-screen, .secret-trigger, .image-counter, .info-btn,
+  .tgm-box, .gallery-card .img-delete-btn, .gallery-card .fav-btn,
+  .game-modal-box, .play-badge { backdrop-filter: none !important; }
+  .hero-particles { display: none; }              /* drop particle work */
+  .netflix-row:hover .card { opacity: 1; transform: none; } /* no dim cascade on touch */
+  .card:hover img, .memory-grid-card:hover img,
+  .gallery-card:hover img { transform: none; filter: none; }
+}
+
+/* Tighter compact layout ≤480px */
+@media (max-width: 480px) {
+  .navbar { padding: 8px 10px; }
+  .logo { font-size: 1.3rem; letter-spacing: 2px; }
+  .nav-btn { font-size: 0.68rem !important; padding: 6px 9px !important; border-radius: 9px; }
+  .create-memory-btn { padding: 11px 16px; font-size: 0.85rem; bottom: 18px; right: 18px; border-radius: 13px; }
+  .secret-trigger { width: 44px; height: 44px; bottom: 18px; left: 18px; font-size: 1.2rem; }
+
+  .hero { padding: 60px 14px 28px; min-height: 70vh; }
+  .hero-stats { gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .hero-stat-value { font-size: 1.15rem; }
+  .hero-stat-label { font-size: 0.6rem; letter-spacing: 1.5px; }
+
+  .section { padding: 18px 12px; }
+  .section h2 { font-size: 1.1rem; }
+  .memories-section { padding: 14px 12px 28px; }
+  .memories-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .memory-grid-overlay { padding: 12px; }
+  .memory-grid-overlay h3 { font-size: 0.82rem; }
+
+  .card { min-width: 130px !important; max-width: 130px !important; height: 200px !important; border-radius: 16px; }
+  .card-overlay { padding: 14px; }
+  .card-overlay h3 { font-size: 0.82rem; margin-bottom: 4px; }
+  .card-overlay p { font-size: 0.66rem; margin-bottom: 8px; }
+  .card-actions button { font-size: 0.62rem; padding: 4px 7px; border-radius: 7px; }
+
+  .gallery-grid { column-count: 2 !important; column-gap: 6px !important; }
+  .gallery-grid .gallery-card { margin-bottom: 6px !important; border-radius: 9px !important; }
+  .video-grid-layout { column-count: 1 !important; }
+
+  .timeline-section { padding: 40px 10px 60px !important; }
+  .timeline-section-header h2 { font-size: 1.3rem; }
+  .timeline-section-header { margin-bottom: 30px; }
+  .timeline-cord { left: 18px; }
+  .timeline-item,
+  .timeline-item:nth-child(odd),
+  .timeline-item:nth-child(even) {
+    width: calc(100% - 42px) !important; left: 42px !important;
+    padding-bottom: 14px !important;
+  }
+  .timeline-dot,
+  .timeline-item:nth-child(odd) .timeline-dot,
+  .timeline-item:nth-child(even) .timeline-dot {
+    left: -30px !important; width: 26px; height: 26px;
+  }
+  .timeline-dot::after { width: 20px; height: 20px; font-size: 0.6rem; }
+  .timeline-content { padding: 13px 14px; border-radius: 14px; }
+  .timeline-content h3 { font-size: 0.92rem; }
+  .timeline-content p { font-size: 0.78rem; }
+
+  .games-grid { gap: 10px; }
+  .game-card { padding: 20px 16px; border-radius: 16px; }
+  .game-card h3 { font-size: 0.98rem; }
+  .game-card p { font-size: 0.76rem; }
+
+  .viewer img { width: 100vw; max-height: 70vh; border-radius: 0; }
+  .close { top: 14px; right: 16px; font-size: 2.1rem; }
+  .viewer-btn { width: 36px; height: 36px; font-size: 1.1rem; }
+
+  #uploadQueue { bottom: 70px; left: 8px; width: calc(100vw - 16px); }
+  .uq-task { padding: 10px 12px; }
+  .uq-filename { font-size: 0.72rem; }
+}
