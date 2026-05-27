@@ -6,6 +6,341 @@ import {
   onAuthStateChanged, signOut
 } from "./firebase.js";
 
+/* ─── PER-USER THEME STORAGE (uid-scoped) ─── */
+window.__lfUid = null;
+window.__lfThemeKey = () => window.__lfUid ? `lf_theme_${window.__lfUid}` : null;
+window.__lfThemeRead = () => { const k = window.__lfThemeKey(); if(!k) return null; try{ return localStorage.getItem(k); }catch(_){ return null; } };
+window.__lfThemeWrite = (v) => { const k = window.__lfThemeKey(); if(!k) return; try{ localStorage.setItem(k, v); }catch(_){} };
+window.__lfThemeWipe  = () => { const k = window.__lfThemeKey(); if(!k) return; try{ localStorage.removeItem(k); }catch(_){} };
+/* Strip the legacy GLOBAL 'lf_theme' key on every boot so a previous user's theme can never leak to another */
+try{ localStorage.removeItem('lf_theme'); }catch(_){}
+
+
+/* ─────────────────────────────────────────
+   EARLY RESILIENT WIRING
+   Runs before anything that could throw so the
+   Theme button + Example vaults always work,
+   even if Firestore/auth init fails later.
+───────────────────────────────────────── */
+(function lfEarlyWiring(){
+  // ---- THEME PICKER (open/close) ----
+  function openPanel(){
+    const p = document.getElementById('lfThemePanel');
+    const b = document.getElementById('lfThemeBackdrop');
+    if(p) p.classList.add('open');
+    if(b) b.classList.add('open');
+  }
+  function closePanel(){
+    const p = document.getElementById('lfThemePanel');
+    const b = document.getElementById('lfThemeBackdrop');
+    if(p) p.classList.remove('open');
+    if(b) b.classList.remove('open');
+  }
+  // expose immediately — full lfPremium IIFE will override with richer versions
+  if(!window.openThemePicker)  window.openThemePicker  = openPanel;
+  if(!window.closeThemePicker) window.closeThemePicker = closePanel;
+
+  // ---- THEME APPLY (always works, even if lfPremium IIFE never runs) ----
+  function lfShade(hex, amt){
+    try{
+      const c = String(hex||'').replace('#','');
+      const n = parseInt(c.length===3 ? c.split('').map(x=>x+x).join('') : c, 16);
+      const r = Math.min(255, Math.max(0, ((n>>16)&255) + amt));
+      const g = Math.min(255, Math.max(0, ((n>>8)&255)  + amt));
+      const b = Math.min(255, Math.max(0, (n&255)       + amt));
+      return '#' + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
+    }catch(e){ return hex; }
+  }
+  function lfApplyThemeObj(t){
+    t = Object.assign({ couple:'', accent:'#ff003c', bg:'#0a0204', font:"'Playfair Display', serif" }, t||{});
+    const r = document.documentElement.style;
+    const A=t.accent, AS=lfShade(A,20), BG=t.bg, BG2=lfShade(BG,10), F=t.font;
+    r.setProperty('--lf-accent', A);
+    r.setProperty('--lf-accent-soft', AS);
+    r.setProperty('--lf-bg-1', BG);
+    r.setProperty('--lf-bg-2', BG2);
+    r.setProperty('--lf-font-display', F);
+    r.setProperty('--accent', A);
+    let s = document.getElementById('lfThemeOverride');
+    if(!s){ s = document.createElement('style'); s.id='lfThemeOverride'; document.head.appendChild(s); }
+    s.textContent = `
+      body, .home-screen, #homeScreen, #memoryScreen, .auth-screen, #authScreen, .ab, .profile-screen, .netflix-splash { background: ${BG} !important; }
+      body { background: linear-gradient(180deg, ${BG}, ${BG2} 60%, #050505) !important; }
+      h1, h2, h3, .logo, .splash-logo, .ab-logo, .ab-title, .timeline-content h3, .tgm-box h2, .game-modal-box h2, .love-meter-pct { font-family: ${F} !important; }
+      .logo, .splash-logo, .ab-logo, .badge-heart, .timeline-year, .timeline-content h3, .tgm-box h2, .game-modal-box h2, .love-meter-pct, .gallery-card .img-delete-btn, .secret-trigger { color: ${A} !important; }
+      .ab-btn, .card-actions button:hover, .close-btn, .gallery-card .img-delete-btn:hover, .love-meter-btn, .tgm-close:hover, .nav-btn:not(.nav-btn-ghost):hover { background: ${A} !important; }
+      .ab-btn { background: linear-gradient(135deg, ${A}, ${lfShade(A,-30)}) !important; box-shadow: 0 8px 24px ${A}55 !important; }
+      .timeline-line { background: linear-gradient(180deg, ${A}, ${AS}, ${A}) !important; }
+      .timeline-dot  { box-shadow: 0 0 10px ${A}, 0 0 25px ${A}aa !important; background: ${A} !important; }
+      .tgm-choice:hover, .wyr-opt.chosen, .truth-btn:hover, .gallery-page-btn:hover, .timeline-game-btn:hover, .game-play-btn:hover, .load-more-btn:hover, .match-card.matched, .tgm-choice.chosen { border-color: ${A} !important; background: ${A}26 !important; color: #fff !important; }
+      .love-meter-bar-fill, .uq-bar-fill { background: linear-gradient(90deg, ${A}, ${AS}) !important; box-shadow: 0 0 12px ${A}aa !important; }
+      .avatar-omen { background: linear-gradient(135deg, ${lfShade(BG,15)}, ${lfShade(BG,40)}) !important; color: ${A} !important; }
+      .ab-in:focus { border-color: ${A}80 !important; }
+      .ab-sw span  { color: ${AS} !important; }
+    `;
+    const pill = document.getElementById('couplePill');
+    if(pill){
+      const label = t.couple || (window.userProfile ? `${(window.userProfile.yourName||'')} & ${(window.userProfile.partnerName||'')}` : '');
+      if(label && label.trim() !== '&'){ pill.innerHTML = `<span class="heart">❤</span>${label}`; pill.style.display='inline-flex'; }
+      else { pill.style.display='none'; }
+    }
+    try{ window.__lfThemeWrite(JSON.stringify(t)); }catch(e){}
+    if(window.userProfile) window.userProfile.theme = t;
+    if(typeof window.saveProfile === 'function'){ try{ window.saveProfile({ theme: t }); }catch(e){} }
+  }
+  function lfReadThemeFromUI(){
+    return {
+      couple: '',
+      accent: document.getElementById('lfThemeAccent')?.value || '#ff003c',
+      bg:     document.getElementById('lfThemeBg')?.value     || '#0a0204',
+      font:   document.getElementById('lfThemeFont')?.value   || "'Playfair Display', serif"
+    };
+  }
+  window.lfApplyThemeNow  = function(){ lfApplyThemeObj(lfReadThemeFromUI()); };
+  window.lfApplyAndClose  = function(){ lfApplyThemeObj(lfReadThemeFromUI()); closePanel(); };
+
+  // Live-apply as user changes inputs
+  const themeInputIds = ['lfThemeAccent','lfThemeBg','lfThemeFont'];
+  document.addEventListener('input',  (e) => { if(e.target && themeInputIds.includes(e.target.id)) lfApplyThemeObj(lfReadThemeFromUI()); });
+  document.addEventListener('change', (e) => { if(e.target && themeInputIds.includes(e.target.id)) lfApplyThemeObj(lfReadThemeFromUI()); });
+
+  // Hydrate from localStorage on first load (avoid flash)
+  try{
+    const cached = JSON.parse(window.__lfThemeRead()||'null');
+    if(cached){
+      if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=>lfApplyThemeObj(cached));
+      else lfApplyThemeObj(cached);
+    }
+  }catch(e){}
+
+  // event delegation as a SAFETY NET (works even if inline onclick fails)
+  document.addEventListener('click', (e) => {
+    const openBtn  = e.target.closest('.lf-theme-btn, [data-open-theme]');
+    if(openBtn){ e.preventDefault(); try{ window.openThemePicker(); }catch(_){ openPanel(); } return; }
+    const doneBtn = e.target.closest('.lf-theme-save');
+    if(doneBtn){ e.preventDefault(); window.lfApplyAndClose(); return; }
+    const closeBtn = e.target.closest('.lf-theme-close, .lf-theme-backdrop');
+    if(closeBtn){ e.preventDefault(); try{ window.closeThemePicker(); }catch(_){ closePanel(); } return; }
+  });
+
+  // ---- EXAMPLE VAULTS (canvas thumbnails + open modal) ----
+  const EXAMPLES = [
+    { chapter:'Chapter 04 · 2024', title:"That rooftop, golden hour",
+      desc:"The sun melted into the skyline and so did we. No words — just the wind, your hand in mine, and a city that finally felt quiet.",
+      palette:['#ff6a3d','#ff003c','#d4a24c'] },
+    { chapter:'Chapter 07 · 2024', title:"The night we didn't sleep",
+      desc:"Fairy lights, half-finished cups of chai, and a playlist on loop. We talked till the sky turned blue and called it falling deeper.",
+      palette:['#8a5cf6','#ff5d8f','#220a2e'] },
+    { chapter:'Chapter 12 · 2025', title:"Slow dance, no music",
+      desc:"The room was dim, the world was loud, and we just swayed. No song needed — your heartbeat was the rhythm.",
+      palette:['#e8b4a0','#ff003c','#1a0f0d'] }
+  ];
+
+  /* ── Animated vault thumbnails ─────────────────────────
+     Root cause of "plain solid" look: getBoundingClientRect()
+     returns 0×0 at DOMContentLoaded for position:absolute
+     canvases whose parent hasn't painted yet, so the canvas
+     was drawn at 1×1 px and CSS-stretched to a solid blob.
+     Fix: read parent.clientWidth/Height (layout-based), and
+     run a requestAnimationFrame loop for animated hearts.
+  ──────────────────────────────────────────────────────── */
+  const _vaultAnims = new WeakMap();   // canvas → { raf, stop }
+
+  function _vaultReset(p, w, h){
+    p.x     = Math.random();
+    p.y     = 1.05 + Math.random() * 0.1;
+    p.size  = 0.45 + Math.random() * 1.1;
+    p.speed = 0.0004 + Math.random() * 0.0005;
+    p.wob   = Math.random() * Math.PI * 2;
+    p.wobS  = 0.012 + Math.random() * 0.018;
+    p.drift = (Math.random() - 0.5) * 0.0008;
+    p.alpha = 0.12 + Math.random() * 0.5;
+  }
+
+  function _vaultStartAnim(cv, idx){
+    if(_vaultAnims.has(cv)) return;
+    const ex = EXAMPLES[idx] || EXAMPLES[0];
+    const [c1, c2, c3] = ex.palette;
+
+    // seed 12 heart particles at random starting positions
+    const particles = Array.from({length:12}, () => {
+      const p = {};
+      _vaultReset(p);
+      p.y = Math.random();  // scatter initial Y
+      return p;
+    });
+
+    let rafId = null;
+    function frame(){
+      // ── size canvas from PARENT (avoids getBoundingClientRect=0 bug) ──
+      const parent = cv.parentElement || cv;
+      const dpr = window.devicePixelRatio || 1;
+      const pw = Math.max(4, parent.clientWidth  || parent.offsetWidth  || 300);
+      const ph = Math.max(4, parent.clientHeight || parent.offsetHeight || 375);
+      const cw = Math.round(pw * dpr);
+      const ch = Math.round(ph * dpr);
+      if(cv.width !== cw || cv.height !== ch){ cv.width = cw; cv.height = ch; }
+
+      const ctx = cv.getContext('2d');
+
+      // gradient background
+      const g = ctx.createLinearGradient(0, 0, cw, ch);
+      g.addColorStop(0,    c1);
+      g.addColorStop(0.55, c2);
+      g.addColorStop(1,    c3);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // soft radial highlight
+      const rg = ctx.createRadialGradient(cw*.68, ch*.32, 5, cw*.68, ch*.32, Math.max(cw,ch)*.72);
+      rg.addColorStop(0, 'rgba(255,255,255,0.22)');
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // floating animated hearts
+      const fs = Math.max(10, Math.floor(ch * 0.075));
+      ctx.font = `${fs}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      particles.forEach(p => {
+        p.y   -= p.speed;
+        p.wob += p.wobS;
+        p.x   += p.drift;
+        if(p.y < -0.12) _vaultReset(p);
+        ctx.globalAlpha = p.alpha;
+        ctx.save();
+        ctx.translate(p.x * cw, p.y * ch);
+        ctx.scale(p.size, p.size);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('❤', Math.sin(p.wob) * 7, 0);
+        ctx.restore();
+      });
+      ctx.globalAlpha = 1;
+
+      // bottom gradient for text legibility
+      const bg = ctx.createLinearGradient(0, ch * 0.52, 0, ch);
+      bg.addColorStop(0, 'rgba(0,0,0,0)');
+      bg.addColorStop(1, 'rgba(0,0,0,0.60)');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, ch * 0.52, cw, ch * 0.48);
+
+      rafId = requestAnimationFrame(frame);
+    }
+
+    rafId = requestAnimationFrame(frame);
+    _vaultAnims.set(cv, { stop(){ cancelAnimationFrame(rafId); _vaultAnims.delete(cv); } });
+  }
+
+  function _vaultStopAnim(cv){
+    const a = _vaultAnims.get(cv); if(a) a.stop();
+  }
+
+  // Static draw for the large example-viewer canvas (no animation needed — one-off)
+  function drawVaultCanvas(cv, idx){
+    if(!cv) return;
+    const parent = cv.parentElement || cv;
+    const dpr = window.devicePixelRatio || 1;
+    const pw = Math.max(4, parent.clientWidth  || parent.offsetWidth  || 400);
+    const ph = Math.max(4, parent.clientHeight || parent.offsetHeight || 400);
+    const cw = Math.round(pw * dpr);
+    const ch = Math.round(ph * dpr);
+    if(cv.width !== cw || cv.height !== ch){ cv.width = cw; cv.height = ch; }
+    const ctx = cv.getContext('2d');
+    const ex = EXAMPLES[idx] || EXAMPLES[0];
+    const [c1, c2, c3] = ex.palette;
+    const g = ctx.createLinearGradient(0, 0, cw, ch);
+    g.addColorStop(0, c1); g.addColorStop(0.55, c2); g.addColorStop(1, c3);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, cw, ch);
+    const rg = ctx.createRadialGradient(cw*.7, ch*.35, 10, cw*.7, ch*.35, Math.max(cw,ch)*.7);
+    rg.addColorStop(0, 'rgba(255,255,255,0.25)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, cw, ch);
+    // Static hearts for the viewer modal
+    ctx.font = `${Math.floor(ch*0.08)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    let s = (idx+1)*9301;
+    function rnd(){ s=(s*9301+49297)%233280; return s/233280; }
+    for(let i=0;i<18;i++){
+      ctx.globalAlpha = 0.15 + rnd() * 0.5;
+      ctx.save();
+      ctx.translate(rnd()*cw, rnd()*ch);
+      ctx.scale(0.5+rnd()*1.4, 0.5+rnd()*1.4);
+      ctx.fillStyle = '#fff';
+      ctx.fillText('❤', 0, 0);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    const bg = ctx.createLinearGradient(0, ch*0.55, 0, ch);
+    bg.addColorStop(0, 'rgba(0,0,0,0)'); bg.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = bg; ctx.fillRect(0, ch*0.55, cw, ch*0.45);
+  }
+
+  function renderAllVaultCanvases(){
+    document.querySelectorAll('.lf-mock-thumb canvas[data-vault]').forEach(cv => {
+      const idx = parseInt(cv.dataset.vault, 10) || 0;
+      _vaultStartAnim(cv, idx);   // kick off animation loop (idempotent)
+    });
+  }
+
+  window.openExampleVault = function(idx){
+    const ex = EXAMPLES[idx]; if(!ex) return;
+    const v = document.getElementById('lfExampleViewer'); if(!v) return;
+    document.getElementById('lfExampleChapter').textContent = ex.chapter;
+    document.getElementById('lfExampleTitle').textContent   = ex.title;
+    document.getElementById('lfExampleDesc').textContent    = ex.desc;
+    v.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {    // double-rAF — layout guaranteed settled
+        drawVaultCanvas(document.getElementById('lfExampleCanvas'), idx);
+      });
+    });
+  };
+  window.closeExampleVault = function(e){
+    if(e && e.target && !e.target.classList.contains('lf-example-viewer')) return;
+    const v = document.getElementById('lfExampleViewer'); if(!v) return;
+    v.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  // Pause animations when tab is hidden → save CPU
+  document.addEventListener('visibilitychange', () => {
+    const cvs = document.querySelectorAll('.lf-mock-thumb canvas[data-vault]');
+    if(document.hidden){
+      cvs.forEach(_vaultStopAnim);
+    } else {
+      cvs.forEach(cv => { _vaultStartAnim(cv, parseInt(cv.dataset.vault,10)||0); });
+    }
+  });
+
+  function init(){
+    // Wait 2 frames so CSS layout has painted before reading clientWidth
+    requestAnimationFrame(() => requestAnimationFrame(renderAllVaultCanvases));
+
+    let rt; window.addEventListener('resize', () => {
+      clearTimeout(rt); rt = setTimeout(() => {
+        // Stop then restart so canvas size snaps to new layout
+        document.querySelectorAll('.lf-mock-thumb canvas[data-vault]').forEach(cv => {
+          _vaultStopAnim(cv);
+          _vaultStartAnim(cv, parseInt(cv.dataset.vault,10)||0);
+        });
+      }, 180);
+    }, {passive:true});
+
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape'){
+        const v = document.getElementById('lfExampleViewer');
+        if(v && v.classList.contains('open')) window.closeExampleVault();
+      }
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+
+
 /* ─────────────────────────────────────────
    STATE
 ───────────────────────────────────────── */
@@ -28,9 +363,11 @@ const PRESET        = "loveflix_uploads";
 const CHUNK         = 50 * 1024 * 1024;
 const ROWS_PG       = 6;
 const GAL_PG        = 60;
-const VAULT_NAMES   = ["Omen","Budhdhu"];
+/* Private Vault shown to every logged-in user (no hardcoded names) */
 /* Emails (lowercased) of the original couple — legacy root /memories auto-imports once into their user-scoped collection */
-const LEGACY_OWNERS = ["omenagarwal000@gmail.com","sahatitli2006@gmail.com"]; // e.g. ["you@gmail.com","partner@gmail.com"]
+/* LEGACY_OWNERS: list emails that had memories in root /memories before user-scoped storage.
+   Add your own emails here if you need the one-time migration. */
+const LEGACY_OWNERS = []; // add your emails here if needed
 
 /* ─────────────────────────────────────────
    CLOUDINARY URL OPTIMIZER (perf)
@@ -86,17 +423,55 @@ window.addEventListener("DOMContentLoaded", () => {
   ss.textContent = `.netflix-splash{animation:splashFadeOut 0.5s ease 1.8s forwards!important;}`;
   document.head.appendChild(ss);
 
-  onAuthStateChanged(auth, async (user) => {
+   onAuthStateChanged(auth, async (user) => {
     hideSplash();
     if (user) {
       currentUser = user;
-      await loadProfile();
-      if (!userProfile) { showOnboarding(); return; }
-      await bootApp();
+      window.__lfUid = user.uid;
+      /* Hide the auth overlay IMMEDIATELY so the UI advances even
+         while Firestore is still loading the profile. Prevents the
+         "stuck on login, need to refresh" bug. */
+      hideAuthScreen();
+      try {
+        await loadProfile();
+        if (!userProfile) { showOnboarding(); return; }
+        await bootApp();
+      } catch (e) {
+        console.error("boot failed:", e);
+        // fall back so the user isn't stuck on a blank screen
+        const home = document.getElementById("homeScreen");
+        if (home) home.style.display = "block";
+        try { updateNavbar(); } catch(_){}
+      }
     } else {
-      currentUser = null; userProfile = null;
-      showAuthScreen("login");
-    }
+
+      currentUser=null;
+      window.__lfUid = null;
+      try{
+        const r=document.documentElement.style;
+        ["--lf-accent","--lf-accent-soft","--lf-bg-1","--lf-bg-2","--lf-font-display","--accent"].forEach(v=>r.removeProperty(v));
+        const ov=document.getElementById("lfThemeOverride"); if(ov) ov.textContent="";
+      }catch(_){}
+      userProfile=null;
+
+      memories=[];
+
+      document
+      .getElementById(
+      "profileBadge"
+      )
+      ?.replaceChildren();
+
+      document
+      .getElementById(
+      "couplePill"
+      )
+      ?.replaceChildren();
+
+      showAuthScreen(
+      "login"
+      );
+}
   });
 });
 
@@ -123,9 +498,30 @@ async function saveProfile(data){
    BOOT APP  (called after auth + profile ready)
 ───────────────────────────────────────── */
 async function bootApp(){
-  recentMemories   = lsGet("recent")    || [];
-  favoriteMemories = lsGet("favs")      || [];
-  favoriteVideos   = lsGet("favvids")   || [];
+  recentMemories=
+lsGet("recent") || [];
+
+favoriteMemories=
+lsGet("favs") || [];
+
+favoriteVideos=
+lsGet("favvids") || [];
+
+/* force profile-specific theme */
+
+if(
+userProfile?.theme
+){
+
+lfApplyThemeObj(
+userProfile.theme
+);
+
+}else{
+
+window.__lfThemeWipe();
+
+}
 
   hideAuthScreen();
   hideOnboarding();
@@ -255,18 +651,119 @@ window.doGoogle = async function(){
 };
 
 window.handleLogout = async function(){
-  if(!confirm("Sign out of LOVEFLIX? ❤️")) return;
-  if(_ssTimer) clearInterval(_ssTimer);
-  window._slideshowLayerA = null;
-  window._slideshowLayerB = null;
-  memories=[]; currentMemory=null; userProfile=null; currentUser=null;
-  document.getElementById("homeScreen").style.display   = "none";
-  document.getElementById("memoryScreen").style.display = "none";
-  const nav=document.getElementById("navbar");
-  if(nav){nav.style.opacity="0";nav.style.pointerEvents="none";}
-  await signOut(auth);
-  /* onAuthStateChanged fires → showAuthScreen */
-};
+
+  if(!confirm(
+    "Sign out of LOVEFLIX? ❤️"
+  )) return;
+
+  try{
+
+    /* stop timers */
+    if(
+      typeof _ssTimer!=="undefined"
+      && _ssTimer
+    ){
+      clearInterval(_ssTimer);
+    }
+
+    /* clear runtime state */
+
+    memories=[];
+    currentMemory=null;
+    currentImages=[];
+    currentIndex=0;
+    currentMode="image";
+
+    recentMemories=[];
+    favoriteMemories=[];
+    favoriteVideos=[];
+
+    userProfile=null;
+    currentUser=null;
+
+    /* clear UI */
+
+    const badge=
+    document.getElementById(
+      "profileBadge"
+    );
+
+    if(badge)
+    badge.textContent="";
+
+    const pill=
+    document.getElementById(
+      "couplePill"
+    );
+
+    if(pill){
+      pill.innerHTML="";
+      pill.style.display="none";
+    }
+
+    const rows=
+    document.getElementById(
+      "rows"
+    );
+
+    if(rows)
+    rows.innerHTML="";
+
+    const fav=
+    document.getElementById(
+      "favoriteRows"
+    );
+
+    if(fav)
+    fav.innerHTML="";
+
+    const cont=
+    document.getElementById(
+      "continueWatching"
+    );
+
+    if(cont)
+    cont.innerHTML="";
+
+    const top=
+    document.getElementById(
+      "topMemories"
+    );
+
+    if(top)
+    top.innerHTML="";
+
+    document
+    .getElementById(
+      "homeScreen"
+    )
+    .style.display="none";
+
+    document
+    .getElementById(
+      "memoryScreen"
+    )
+    .style.display="none";
+
+    /* remove previous theme */
+
+    document
+    .documentElement
+    .removeAttribute(
+      "style"
+    );
+
+    window.__lfThemeWipe();
+
+    await signOut(auth);
+
+  }catch(e){
+
+    console.log(e);
+
+  }
+
+}
 /* Back-compat shims for any leftover HTML using old names */
 window.switchProfile = window.handleLogout;
 window.selectProfile = function(){ /* legacy no-op — auth-aware system handles this */ };
@@ -290,9 +787,9 @@ function showOnboarding(){
     <h2 class="ab-title" style="font-size:1.2rem;">Set up your universe ❤️</h2>
     <p class="ab-sub">Personalise your story — takes 30 seconds</p>
     <label class="ob-lbl">Your name</label>
-    <input class="ab-in" id="obYN" type="text" placeholder="e.g. Omen">
+    <input class="ab-in" id="obYN" type="text" placeholder="e.g. Alex">
     <label class="ob-lbl">Your partner's name</label>
-    <input class="ab-in" id="obPN" type="text" placeholder="e.g. Budhdhu">
+    <input class="ab-in" id="obPN" type="text" placeholder="e.g. Jamie">
     <label class="ob-lbl">Relationship start date</label>
     <input class="ab-in" id="obSD" type="date" style="color-scheme:dark;">
     <label class="ob-lbl">Partner's birthday</label>
@@ -331,7 +828,7 @@ function updateNavbar(){
   const badge=document.getElementById("profileBadge");
  if(badge){badge.textContent = `${yourName()} ❤️ ${partnerName()}`;}
   const vb=document.getElementById("privateVaultBtn");
-  if(vb) vb.style.display=VAULT_NAMES.includes(userProfile?.yourName||"")?"inline-block":"none";
+  if(vb) vb.style.display=currentUser?"inline-block":"none"; /* show for all logged-in users */
 }
 
 window.showHome=function(){
@@ -446,7 +943,7 @@ function initCursor(){
 function initParticles(){
   const c=document.getElementById("heroParticles"); if(!c) return;
   const spawn=()=>{
-    const MAX_P = (window.innerWidth<768||matchMedia("(prefers-reduced-motion:reduce)").matches)?3:8; if(c.children.length>=MAX_P) return;
+    const MAX_P = window.matchMedia('(prefers-reduced-motion:reduce)').matches ? 0 : window.innerWidth<768 ? 3 : 8; if(MAX_P===0){c.innerHTML='';return;} if(c.children.length>=MAX_P) return;
     const p=document.createElement("div"); p.className="hero-particle";
     const sz=2+Math.random()*3, dur=10+Math.random()*8;
     p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;animation-duration:${dur}s;opacity:${.2+Math.random()*.35};`;
@@ -472,7 +969,7 @@ function initScrollReveal(){
   const observe=()=>{
     const io=new IntersectionObserver((ents)=>{
       ents.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add("revealed"),i*70);io.unobserve(e.target);}});
-    },{threshold:.1});
+    },{threshold:0.05,rootMargin:'0px 0px -5% 0px'});
     document.querySelectorAll(".reveal-on-scroll:not(.revealed)").forEach(el=>io.observe(el));
   };
   observe(); setTimeout(observe,3500);
@@ -685,8 +1182,10 @@ window.answerTLGame=function(gi,ci){
 window.closeTLGame=function(){document.getElementById("timelineGameModal").classList.remove("active");};
 
 function typewrite(el,text,speed){
-  el.textContent="";let i=0;
-  const iv=setInterval(()=>{el.textContent+=text[i++];if(i>=text.length)clearInterval(iv);},speed);
+  el.textContent="";
+  if(!text) return;
+  let i=0;
+  const iv=setInterval(()=>{ if(i>=text.length){clearInterval(iv);return;} el.textContent+=text[i++]; },speed);
 }
 
 function tgmAnim(type){
@@ -719,12 +1218,13 @@ function tgmAnim(type){
 ───────────────────────────────────────── */
 function addRecent(memory){
   recentMemories=recentMemories.filter(m=>m.id!==memory.id);
-  recentMemories.unshift(memory); if(recentMemories.length>5) recentMemories.pop();
+  recentMemories.unshift({id:memory.id}); if(recentMemories.length>5) recentMemories.pop();
   lsSet("recent",recentMemories); genContinueWatching();
 }
 function genContinueWatching(){
   const row=document.getElementById("continueWatching"); if(!row) return;
-  row.innerHTML=recentMemories.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>Continue Watching ❤️</p></div></div>`).join("");
+  const fresh=recentMemories.map(m=>memories.find(x=>x.id===m.id)||m).filter(m=>m&&m.hero);
+  row.innerHTML=fresh.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3><p>Continue Watching ❤️</p></div></div>`).join("");
 }
 
 /* ─────────────────────────────────────────
@@ -733,12 +1233,13 @@ function genContinueWatching(){
 window.toggleFavorite=function(id){
   const m=memories.find(m=>m.id===id); if(!m) return;
   if(favoriteMemories.find(f=>f.id===id)) favoriteMemories=favoriteMemories.filter(f=>f.id!==id);
-  else favoriteMemories.push(m);
+  else favoriteMemories.push({id:m.id});
   lsSet("favs",favoriteMemories); genFavorites();
 };
 function genFavorites(){
   const row=document.getElementById("favoriteRows"); if(!row) return;
-  row.innerHTML=favoriteMemories.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3></div></div>`).join("");
+  const fresh2=favoriteMemories.map(m=>memories.find(x=>x.id===m.id)||m).filter(m=>m&&m.hero);
+  row.innerHTML=fresh2.map(m=>`<div class="card" onclick="openMemory('${m.id}')"><img src="${cldOpt(m.hero,600)}" loading="lazy" decoding="async" alt="${m.title}"><div class="card-overlay"><h3>${m.title}</h3></div></div>`).join("");
 }
 
 /* ─────────────────────────────────────────
@@ -877,7 +1378,7 @@ window._renderGal=function(){
    PRIVATE VAULT
 ───────────────────────────────────────── */
 window.showPrivate=function(){
-  if(!VAULT_NAMES.includes(userProfile?.yourName||"")) return;
+  if(!currentUser) return; /* gate on auth only */
   document.getElementById("passwordScreen").classList.add("active");
 };
 window.closePasswordScreen=function(){document.getElementById("passwordScreen").classList.remove("active");};
@@ -1053,8 +1554,8 @@ window.createMemory=async function(){
       if(type==="video") vids.push(d.secure_url); else imgs.push(d.secure_url);
     }
     setProgress(100,"Saving...");
-    const isPrivate =document.getElementById("secureMemory").checked;
-const lovePassword =document.getElementById("securePassword").value;
+    const isPrivate   = document.getElementById("secureMemory")?.checked   || false;
+    const lovePassword = document.getElementById("securePassword")?.value    || "";
 await addDoc(memoriesCol(),{id:title.toLowerCase().replaceAll(" ","-"),title,description:desc,hero:imgs[0] || vids[0],images:imgs,videos:vids,tags:["New"],opens:0,favoriteCount:0,isPrivate,lovePassword});    await refreshApp(); hideProgress(); closeCreator();
     document.getElementById("memoryTitle").value="";
     document.getElementById("memoryDescription").value="";
@@ -1103,7 +1604,7 @@ window.addMedia=function(){
     if(vids.length>1){alert("One video at a time ❤️");return;}
     for(const v of vids){if(v.size>500*1024*1024){alert(`"${v.name}" too large (max 500MB) ❤️`);return;}}
 
-    const mid=currentMemory.id, mdocId=currentMemory.docId;
+    const mid=currentMemory.id, mdocId=currentMemory.docId, origHero=currentMemory.hero;
     let curImgs=[...currentMemory.images], curVids=[...(currentMemory.videos||[])];
     const uids=[...imgs,...vids].map(f=>qTask(f.name));
 
@@ -1111,7 +1612,7 @@ window.addMedia=function(){
       try{
         for(let i=0;i<imgs.length;i++){const uid=uids[i];try{const d=await uploadToCloudinary(imgs[i],p=>qUpdate(uid,p));curImgs.push(d.secure_url);qDone(uid,true);}catch(e){qDone(uid,false);}}
         for(let i=0;i<vids.length;i++){const uid=uids[imgs.length+i];try{const d=await uploadToCloudinary(vids[i],p=>qUpdate(uid,p));curVids.push(d.secure_url);qDone(uid,true);}catch(e){qDone(uid,false);}}
-        await updateDoc(memDoc(mdocId),{images:curImgs,videos:curVids,hero:curImgs[0]||currentMemory.hero});
+        await updateDoc(memDoc(mdocId),{images:curImgs,videos:curVids,hero:curImgs[0]||origHero});
         await loadMemories();
         const upd=memories.find(m=>m.id===mid);
         if(upd){currentMemory=upd;window._gAll=[...upd.images];const s=document.getElementById("memoryScreen");if(s&&s.style.display!=="none")renderMemory(currentMemory);}
@@ -1297,3 +1798,290 @@ window.toggleSecureMemory = function(el){
   ? "block"
   : "none";
 }
+/* ═════════════════════════════════════════════════════════════
+   LOVEFLIX PREMIUM UPGRADE MODULE  (v.1)
+   - Heart particle overlay (cinematic, throttled for perf)
+   - Theme picker (full custom: couple name, accent, bg, font)
+     persisted to userProfile.theme via debounced setDoc
+   - Couple-name pill in navbar
+   - Reveal-on-scroll observer for new marketing sections
+   - Auth-screen marketing injector (mock memories + tagline)
+   All additive — wraps/extends existing functions, does NOT replace them.
+   ═════════════════════════════════════════════════════════════ */
+(function lfPremium(){
+  /* ---------- Heart particle generator (perf-aware) ---------- */
+  function spawnHearts(){
+    const c = document.getElementById('lfHearts');
+    if(!c) return;
+    if(window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    const MAX = window.innerWidth < 768 ? 5 : 12;
+    function spawn(){
+      if(c.children.length >= MAX) return;
+      const s = document.createElement('span');
+      s.textContent = '❤';
+      const size = 12 + Math.random()*22;
+      s.style.left = (Math.random()*100) + '%';
+      s.style.fontSize = size + 'px';
+      s.style.setProperty('--dx', ((Math.random()-0.5)*200) + 'px');
+      s.style.animationDuration = (8 + Math.random()*10) + 's';
+      s.style.opacity = (0.4 + Math.random()*0.5);
+      c.appendChild(s);
+      setTimeout(()=>s.remove(), 20000);
+    }
+    for(let i=0;i<Math.floor(MAX/2);i++) setTimeout(spawn, i*600);
+    setInterval(spawn, window.innerWidth < 768 ? 2200 : 1400);
+  }
+
+  /* ---------- Theme system ---------- */
+  const DEFAULT_THEME = {
+    couple: '',
+    accent: '#ff003c',
+    bg: '#0a0204',
+    font: "'Playfair Display', serif"
+  };
+  const PRESETS = [
+    { name:'Crimson',  accent:'#ff003c', bg:'#0a0204' },
+    { name:'Rose',     accent:'#ff5d8f', bg:'#15060c' },
+    { name:'Gold',     accent:'#d4a24c', bg:'#10080a' },
+    { name:'Sunset',   accent:'#ff6a3d', bg:'#180a08' },
+    { name:'Midnight', accent:'#8a5cf6', bg:'#070417' },
+    { name:'Cream',    accent:'#e8b4a0', bg:'#1a0f0d' }
+  ];
+
+   function applyTheme(t){
+    t = Object.assign({}, DEFAULT_THEME, t || {});
+    const r = document.documentElement.style;
+    r.setProperty('--lf-accent', t.accent);
+    r.setProperty('--lf-accent-soft', shade(t.accent, 20));
+    r.setProperty('--lf-bg-1', t.bg);
+    r.setProperty('--lf-bg-2', shade(t.bg, 10));
+    r.setProperty('--lf-font-display', t.font);
+    r.setProperty('--accent', t.accent);
+
+    /* === Force hardcoded reds / bg / font to follow the theme === */
+    let s = document.getElementById('lfThemeOverride');
+    if(!s){ s = document.createElement('style'); s.id = 'lfThemeOverride'; document.head.appendChild(s); }
+    const A = t.accent, AS = shade(t.accent,20), BG = t.bg, BG2 = shade(t.bg,10), F = t.font;
+    s.textContent = `
+      body, .home-screen, #homeScreen, #memoryScreen,
+      .auth-screen, #authScreen, .ab, .profile-screen,
+      .netflix-splash { background: ${BG} !important; }
+      body { background: linear-gradient(180deg, ${BG}, ${BG2} 60%, #050505) !important; }
+
+      h1, h2, h3, .logo, .splash-logo, .ab-logo, .ab-title,
+      .timeline-content h3, .tgm-box h2, .game-modal-box h2,
+      .love-meter-pct { font-family: ${F} !important; }
+
+      .logo, .splash-logo, .ab-logo, .badge-heart,
+      .timeline-year, .timeline-content h3,
+      .tgm-box h2, .game-modal-box h2, .love-meter-pct,
+      .gallery-card .img-delete-btn,
+      .secret-trigger { color: ${A} !important; }
+
+      .ab-btn, .card-actions button:hover,
+      .close-btn, .gallery-card .img-delete-btn:hover,
+      .love-meter-btn, .tgm-close:hover,
+      .nav-btn:not(.nav-btn-ghost):hover { background: ${A} !important; }
+
+      .ab-btn { background: linear-gradient(135deg, ${A}, ${shade(A,-30)}) !important; box-shadow: 0 8px 24px ${A}55 !important; }
+
+      .timeline-line { background: linear-gradient(180deg, ${A}, ${AS}, ${A}) !important; }
+      .timeline-dot  { box-shadow: 0 0 10px ${A}, 0 0 25px ${A}aa !important; background: ${A} !important; }
+
+      .tgm-choice:hover, .wyr-opt.chosen, .truth-btn:hover,
+      .gallery-page-btn:hover, .timeline-game-btn:hover,
+      .game-play-btn:hover, .load-more-btn:hover,
+      .match-card.matched, .tgm-choice.chosen
+        { border-color: ${A} !important; background: ${A}26 !important; color: #fff !important; }
+
+      .love-meter-bar-fill, .uq-bar-fill
+        { background: linear-gradient(90deg, ${A}, ${AS}) !important; box-shadow: 0 0 12px ${A}aa !important; }
+
+      .avatar-omen { background: linear-gradient(135deg, ${shade(BG,15)}, ${shade(BG,40)}) !important; color: ${A} !important; }
+
+      .ab-in:focus { border-color: ${A}80 !important; }
+      .ab-sw span  { color: ${AS} !important; }
+    `;
+
+    // update couple pill
+    const pill = document.getElementById('couplePill');
+    if(pill){
+      const label = t.couple || (window.userProfile ? `${(window.userProfile.yourName||'')} & ${(window.userProfile.partnerName||'')}` : '');
+      if(label && label.trim() !== '&'){
+        pill.innerHTML = `<span class="heart">❤</span>${label}`;
+        pill.style.display = 'inline-flex';
+      } else { pill.style.display = 'none'; }
+    }
+  }
+
+  function shade(hex, amt){
+    // lighten/darken hex by amt (0-100)
+    try{
+      const c = hex.replace('#','');
+      const n = parseInt(c.length===3 ? c.split('').map(x=>x+x).join('') : c, 16);
+      const r = Math.min(255, Math.max(0, ((n>>16)&255) + amt));
+      const g = Math.min(255, Math.max(0, ((n>>8)&255)  + amt));
+      const b = Math.min(255, Math.max(0, (n&255)       + amt));
+      return '#' + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
+    }catch(e){ return hex; }
+  }
+
+  // debounced save (avoid hammering Firestore on color drag)
+  let saveTimer = null;
+  function saveTheme(theme){
+    applyTheme(theme);
+    if(window.userProfile) window.userProfile.theme = theme;
+    try{ window.__lfThemeWrite(JSON.stringify(theme)); }catch(e){}
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      try{
+        if(typeof window.saveProfile === 'function' && window.currentUser){
+          await window.saveProfile({ theme });
+        }
+      }catch(e){ console.warn('theme save failed', e); }
+    }, 700);
+  }
+
+  function buildPresetUI(){
+    const wrap = document.getElementById('lfPresets');
+    if(!wrap) return;
+    wrap.innerHTML = PRESETS.map((p,i)=>`
+      <div class="lf-preset" data-i="${i}"
+           style="background:linear-gradient(135deg, ${p.accent}, ${p.bg})">
+        <span>${p.name}</span>
+      </div>`).join('');
+    wrap.querySelectorAll('.lf-preset').forEach(el => {
+      el.addEventListener('click', () => {
+        const p = PRESETS[+el.dataset.i];
+        const cur = currentThemeFromUI();
+        const next = { ...cur, accent:p.accent, bg:p.bg };
+        setUIFromTheme(next);
+        saveTheme(next);
+        wrap.querySelectorAll('.lf-preset').forEach(x=>x.classList.remove('active'));
+        el.classList.add('active');
+      });
+    });
+  }
+
+  function currentThemeFromUI(){
+    return {
+      couple: '',
+      accent: document.getElementById('lfThemeAccent')?.value || DEFAULT_THEME.accent,
+      bg:     document.getElementById('lfThemeBg')?.value     || DEFAULT_THEME.bg,
+      font:   document.getElementById('lfThemeFont')?.value   || DEFAULT_THEME.font
+    };
+  }
+  function setUIFromTheme(t){
+    t = Object.assign({}, DEFAULT_THEME, t||{});
+    const a = document.getElementById('lfThemeAccent'); if(a) a.value = t.accent;
+    const b = document.getElementById('lfThemeBg');     if(b) b.value = t.bg;
+    const f = document.getElementById('lfThemeFont');   if(f) f.value = t.font;
+    const c = document.getElementById('lfThemeCouple'); if(c) c.value = t.couple;
+    const an = document.getElementById('lfAccentName'); if(an) an.textContent = t.accent;
+    const bn = document.getElementById('lfBgName');     if(bn) bn.textContent = t.bg;
+  }
+
+  function bindInputs(){
+    const inputs = ['lfThemeAccent','lfThemeBg','lfThemeFont'];
+    inputs.forEach(id => {
+      const el = document.getElementById(id);
+      if(!el || el.__lfBound) return;
+      el.__lfBound = true;
+      const ev = (el.type === 'color' || el.tagName === 'SELECT') ? 'input' : 'input';
+      el.addEventListener(ev, () => {
+        const t = currentThemeFromUI();
+        const an = document.getElementById('lfAccentName'); if(an) an.textContent = t.accent;
+        const bn = document.getElementById('lfBgName');     if(bn) bn.textContent = t.bg;
+        saveTheme(t);
+      });
+    });
+  }
+
+  window.openThemePicker = function(){
+    buildPresetUI();
+    bindInputs();
+    // hydrate from profile or localStorage
+    let t = (window.userProfile && window.userProfile.theme) || null;
+    if(!t){ try{ t = JSON.parse(window.__lfThemeRead()||'null'); }catch(e){} }
+    if(!t){
+      t = { ...DEFAULT_THEME, couple: window.userProfile ? `${window.userProfile.yourName||''} & ${window.userProfile.partnerName||''}`.replace(/^ & $/,'') : '' };
+    }
+    setUIFromTheme(t);
+    document.getElementById('lfThemePanel').classList.add('open');
+    document.getElementById('lfThemeBackdrop').classList.add('open');
+  };
+  window.closeThemePicker = function(){
+    document.getElementById('lfThemePanel').classList.remove('open');
+    document.getElementById('lfThemeBackdrop').classList.remove('open');
+  };
+  window.resetTheme = function(){
+    setUIFromTheme(DEFAULT_THEME);
+    saveTheme(DEFAULT_THEME);
+  };
+  window.applyTheme = applyTheme;
+
+  /* ---------- Reveal-on-scroll for new marketing sections ---------- */
+  function initReveal(){
+    if(!('IntersectionObserver' in window)) {
+      document.querySelectorAll('.reveal-on-scroll').forEach(el => el.classList.add('revealed'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting){ e.target.classList.add('revealed'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => io.observe(el));
+  }
+
+  /* ---------- Auth-screen marketing injector ---------- */
+  function injectAuthMarketing(){
+    // wait until the auth screen has been rendered by existing code
+    const target = document.querySelector('.auth-screen, #authScreen, .auth-box, .auth-container');
+    if(!target || target.querySelector('.lf-auth-marketing')) return false;
+    const div = document.createElement('div');
+    div.className = 'lf-auth-marketing';
+    div.innerHTML = `
+      <p class="lf-auth-tagline">LOVEFLIX — your private love story, only for us ❤</p>
+      <div class="lf-mini-mocks">
+        <img src="images/mock-1.jpg" alt="" loading="lazy">
+        <img src="images/mock-2.jpg" alt="" loading="lazy">
+        <img src="images/mock-3.jpg" alt="" loading="lazy">
+      </div>
+    `;
+    target.appendChild(div);
+    return true;
+  }
+
+  /* ---------- Boot ---------- */
+  function boot(){
+    spawnHearts();
+    initReveal();
+
+    // Hydrate theme early from localStorage so first paint isn't a flash
+    try{
+      const cached = JSON.parse(window.__lfThemeRead() || 'null');
+      if(cached) applyTheme(cached);
+    }catch(e){}
+
+    // Re-apply when profile loads (Firestore wins over local cache)
+    let lastProfileRef = null;
+    setInterval(() => {
+      if(window.userProfile && window.userProfile !== lastProfileRef){
+        lastProfileRef = window.userProfile;
+        applyTheme(window.userProfile.theme);
+      }
+    }, 800);
+
+    // Try inject auth marketing repeatedly until auth screen exists & populated
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if(injectAuthMarketing() || tries > 30) clearInterval(iv);
+    }, 500);
+  }
+
+  if(document.readyState === 'loading'){
+    window.addEventListener('DOMContentLoaded', boot);
+  } else { boot(); }
+})();
