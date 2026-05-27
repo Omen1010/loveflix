@@ -28,11 +28,50 @@
 <nav class="navbar" id="navbar" style="opacity:0;pointer-events:none;">
   <div class="logo" onclick="showHome()">LOVEFLIX</div>
   <div class="nav-right">
+    <span id="couplePill" class="lf-couple-pill" style="display:none;"></span>
     <span id="profileBadge" class="profile-badge"></span>
+    <button class="nav-btn lf-chat-nav-btn" onclick="openChatPanel()">💌 Chat <span class="lf-chat-badge" id="lfChatNavBadge" style="display:none;"></span></button>
+    <button class="lf-theme-btn" onclick="openThemePicker()">🎨 Theme</button>
     <button class="nav-btn" id="privateVaultBtn" onclick="showPrivate()">Private Vault 🔒</button>
     <button class="nav-btn nav-btn-ghost" onclick="handleLogout()">Sign Out</button>
   </div>
 </nav>
+
+<!-- THEME PICKER -->
+<div class="lf-theme-backdrop" id="lfThemeBackdrop" onclick="closeThemePicker()"></div>
+<aside class="lf-theme-panel" id="lfThemePanel" aria-hidden="true">
+  <button class="lf-theme-close" onclick="closeThemePicker()" aria-label="Close">×</button>
+  <h3>Your Universe 🎨</h3>
+  <p class="lf-hint">Personalize your love space. Changes save automatically.</p>
+
+  <label>Quick Presets</label>
+  <div class="lf-presets" id="lfPresets"></div>
+
+  <label>Accent Color</label>
+  <div class="lf-theme-row">
+    <input type="color" id="lfThemeAccent" value="#ff003c">
+    <span class="lf-color-name" id="lfAccentName">#ff003c</span>
+  </div>
+
+  <label>Background Tone</label>
+  <div class="lf-theme-row">
+    <input type="color" id="lfThemeBg" value="#0a0204">
+    <span class="lf-color-name" id="lfBgName">#0a0204</span>
+  </div>
+
+  <label>Display Font</label>
+  <select id="lfThemeFont">
+    <option value="'Playfair Display', serif">Playfair (Cinematic)</option>
+    <option value="'DM Sans', sans-serif">DM Sans (Modern)</option>
+    <option value="Georgia, serif">Georgia (Classic)</option>
+    <option value="'Courier New', monospace">Mono (Retro)</option>
+  </select>
+
+  <div class="lf-theme-actions">
+    <button class="lf-theme-reset" onclick="resetTheme()">Reset</button>
+    <button class="lf-theme-save" onclick="lfApplyAndClose()">Done</button>
+  </div>
+</aside>
 
 <!-- CREATE MEMORY -->
 <button class="create-memory-btn" onclick="openCreator()">＋ Create Memory</button>
@@ -84,8 +123,10 @@
 
   <!-- HERO -->
   <section class="hero home-hero">
+    <div class="hero-bgimg"></div>
     <div class="overlay"></div>
     <div class="hero-particles" id="heroParticles"></div>
+    <div class="lf-hearts" id="lfHearts"></div>
 
     <div class="hero-marquee-wrap">
       <div class="hero-marquee">
@@ -125,6 +166,9 @@
         <button class="play-btn hero-play" onclick="scrollToRows(); addHeroRipple(event)">
           <span class="hero-play-icon">▶</span>
           <span>Start Watching</span>
+        </button>
+        <button class="lf-cta-secondary" onclick="openThemePicker()">
+          🎨 Personalize
         </button>
       </div>
     </div>
@@ -220,7 +264,94 @@
   <!-- MEMORY ROWS (grid) -->
   <div id="rows"></div>
 
+  <!-- ───────── PREMIUM MARKETING SECTIONS ───────── -->
+
+  <!-- FEATURES SHOWCASE -->
+  <section class="lf-section reveal-on-scroll">
+    <div class="lf-section-head">
+      <span class="lf-eyebrow">Why LOVEFLIX</span>
+      <h2>A private universe, <span class="accent">built for two</span>.</h2>
+      <p>Everything you need to turn your love story into something cinematic — yours alone, forever.</p>
+    </div>
+    <div class="lf-features">
+      <div class="lf-feature"><span class="lf-feature-ico">🔒</span><h3>Private Vault</h3><p>Password-locked memories only the two of you can ever see.</p></div>
+      <div class="lf-feature"><span class="lf-feature-ico">🎬</span><h3>Cinematic Timeline</h3><p>Your story plays out chapter by chapter, like a Netflix series.</p></div>
+      <div class="lf-feature"><span class="lf-feature-ico">🎨</span><h3>Your Own Theme</h3><p>Pick colors, fonts, names — make the whole site feel like you two.</p></div>
+      <div class="lf-feature"><span class="lf-feature-ico">🎮</span><h3>Mini Games</h3><p>Love Meter, Truth Bomb, Would You Rather — for the bored late nights.</p></div>
+    </div>
+  </section>
+
+  <!-- MOCK MEMORIES TEASER -->
+  <section class="lf-section reveal-on-scroll">
+    <div class="lf-section-head">
+      <span class="lf-eyebrow">Inside The Vault</span>
+      <h2>Every moment, <span class="accent">on replay</span>.</h2>
+      <p>Real memories. Locked behind your love password. Only you two get the key.</p>
+    </div>
+    <div class="lf-mock-grid" id="lfMockGrid">
+      <div class="lf-mock-card" onclick="openExampleVault(0)">
+        <div class="lf-mock-thumb"><canvas data-vault="0"></canvas></div>
+        <span class="lf-mock-lock">🔒 Private</span>
+        <div class="lf-mock-meta"><h4>That rooftop, golden hour</h4><p>Chapter 04 · 2024</p></div>
+      </div>
+      <div class="lf-mock-card" onclick="openExampleVault(1)">
+        <div class="lf-mock-thumb"><canvas data-vault="1"></canvas></div>
+        <span class="lf-mock-lock">🔒 Private</span>
+        <div class="lf-mock-meta"><h4>The night we didn't sleep</h4><p>Chapter 07 · 2024</p></div>
+      </div>
+      <div class="lf-mock-card" onclick="openExampleVault(2)">
+        <div class="lf-mock-thumb"><canvas data-vault="2"></canvas></div>
+        <span class="lf-mock-lock">🔒 Private</span>
+        <div class="lf-mock-meta"><h4>Slow dance, no music</h4><p>Chapter 12 · 2025</p></div>
+      </div>
+    </div>
+
+    <!-- EXAMPLE VAULT VIEWER -->
+    <div class="lf-example-viewer" id="lfExampleViewer" onclick="closeExampleVault(event)">
+      <div class="lf-example-box" onclick="event.stopPropagation()">
+        <button class="lf-example-close" onclick="closeExampleVault()" aria-label="Close">×</button>
+        <div class="lf-example-thumb"><canvas id="lfExampleCanvas"></canvas></div>
+        <div class="lf-example-meta">
+          <span class="lf-eyebrow" id="lfExampleChapter"></span>
+          <h3 id="lfExampleTitle"></h3>
+          <p id="lfExampleDesc"></p>
+          <p class="lf-example-hint">🔒 This is a preview. Sign in to create your own private vault.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="lf-section reveal-on-scroll">
+    <div class="lf-section-head">
+      <span class="lf-eyebrow">Loved By Couples</span>
+      <h2>From the people who <span class="accent">live in it</span>.</h2>
+    </div>
+    <div class="lf-testis">
+      <div class="lf-testi">
+        <p>This isn't just an app, it's literally <em>our</em> universe. Every fight, every silly moment — it's all there. I cried.</p>
+        <div class="lf-testi-who"><div class="lf-testi-av">A</div><div><strong>Aanya & Karan</strong><span>Mumbai, India</span></div></div>
+      </div>
+      <div class="lf-testi">
+        <p>The private vault feature is *chef's kiss*. Finally a place where our memories aren't just lost in a phone gallery.</p>
+        <div class="lf-testi-who"><div class="lf-testi-av">M</div><div><strong>Maya & Dev</strong><span>Bengaluru</span></div></div>
+      </div>
+      <div class="lf-testi">
+        <p>We made our anniversary timeline on LOVEFLIX. He proposed using one of the timeline cards. We're still shaking.</p>
+        <div class="lf-testi-who"><div class="lf-testi-av">R</div><div><strong>Riya & Aarav</strong><span>Delhi</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIG CTA BAND -->
+  <section class="lf-cta-band reveal-on-scroll">
+    <h2>Your story deserves more than <em>a camera roll</em>.</h2>
+    <p>Start your private universe today. Free, forever, just for the two of you.</p>
+    <button class="lf-cta-big" onclick="openCreator()">＋ Create Your First Memory</button>
+  </section>
+
 </section>
+
 
 <!-- MEMORY SCREEN -->
 <section id="memoryScreen" style="display:none;">
@@ -240,5 +371,6 @@
 <div id="uploadQueue"></div>
 
 <script type="module" src="js/app.js"></script>
+<script type="module" src="js/chat.js"></script>
 </body>
 </html>
