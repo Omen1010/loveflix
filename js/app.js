@@ -363,11 +363,9 @@ const PRESET        = "loveflix_uploads";
 const CHUNK         = 50 * 1024 * 1024;
 const ROWS_PG       = 6;
 const GAL_PG        = 60;
-/* Private Vault shown to every logged-in user (no hardcoded names) */
+const VAULT_NAMES = [];
 /* Emails (lowercased) of the original couple — legacy root /memories auto-imports once into their user-scoped collection */
-/* LEGACY_OWNERS: list emails that had memories in root /memories before user-scoped storage.
-   Add your own emails here if you need the one-time migration. */
-const LEGACY_OWNERS = []; // add your emails here if needed
+const LEGACY_OWNERS = ["omenagarwal000@gmail.com","sahatitli2006@gmail.com"]; // e.g. ["you@gmail.com","partner@gmail.com"]
 
 /* ─────────────────────────────────────────
    CLOUDINARY URL OPTIMIZER (perf)
@@ -435,6 +433,26 @@ window.addEventListener("DOMContentLoaded", () => {
       try {
         await loadProfile();
         if (!userProfile) { showOnboarding(); return; }
+        // Set active profile automatically for current account
+window.activeProfile =
+    localStorage.getItem("lf_active_profile") ||
+    userProfile.yourName;
+
+localStorage.setItem(
+    "lf_active_profile",
+    window.activeProfile
+);
+window.activeProfile =
+    localStorage.getItem("lf_active_profile") ||
+    userProfile.yourName;
+
+localStorage.setItem(
+    "lf_active_profile",
+    window.activeProfile
+);
+
+console.log("ACTIVE PROFILE:", window.activeProfile);
+console.log("USER PROFILE:", userProfile);
         await bootApp();
       } catch (e) {
         console.error("boot failed:", e);
@@ -484,10 +502,20 @@ function hideSplash(){
    PROFILE LOAD / SAVE
 ───────────────────────────────────────── */
 async function loadProfile(){
-  try {
+  try{
     const snap = await getDoc(profileRef());
     userProfile = snap.exists() ? snap.data() : null;
-  } catch(e){ console.error("loadProfile:",e); userProfile = null; }
+
+    if(userProfile){
+      window.activeProfile =
+        localStorage.getItem('lf_active_profile')
+        || userProfile.yourName;
+    }
+
+  }catch(e){
+    console.error("loadProfile:",e);
+    userProfile = null;
+  }
 }
 async function saveProfile(data){
   await setDoc(profileRef(), data, {merge:true});
@@ -513,8 +541,8 @@ if(
 userProfile?.theme
 ){
 
-lfApplyThemeObj(
-userProfile.theme
+applyTheme(
+  userProfile.theme
 );
 
 }else{
@@ -535,6 +563,9 @@ window.__lfThemeWipe();
   initScrollReveal();
   setTimeout(() => { renderTimeline(); initCord(); }, 100);
   setTimeout(initSlideshow, 500);
+
+  // Notify lfPremium that the profile is ready — replaces the 800ms polling setInterval
+  window.dispatchEvent(new CustomEvent('lf:profileLoaded'));
 }
 
 /* ─────────────────────────────────────────
@@ -680,6 +711,8 @@ window.handleLogout = async function(){
 
     userProfile=null;
     currentUser=null;
+    localStorage.removeItem("lf_active_profile");
+    window.activeProfile = null;
 
     /* clear UI */
 
@@ -767,6 +800,8 @@ window.handleLogout = async function(){
 /* Back-compat shims for any leftover HTML using old names */
 window.switchProfile = window.handleLogout;
 window.selectProfile = function(){ /* legacy no-op — auth-aware system handles this */ };
+/* openVault is used in some HTML variants — alias to showPrivate */
+window.openVault = function(){ window.showPrivate && window.showPrivate(); };
 
 /* ─────────────────────────────────────────
    ONBOARDING
@@ -787,9 +822,9 @@ function showOnboarding(){
     <h2 class="ab-title" style="font-size:1.2rem;">Set up your universe ❤️</h2>
     <p class="ab-sub">Personalise your story — takes 30 seconds</p>
     <label class="ob-lbl">Your name</label>
-    <input class="ab-in" id="obYN" type="text" placeholder="e.g. Alex">
+    <input class="ab-in" id="obYN" type="text" placeholder="e.g. Omen">
     <label class="ob-lbl">Your partner's name</label>
-    <input class="ab-in" id="obPN" type="text" placeholder="e.g. Jamie">
+    <input class="ab-in" id="obPN" type="text" placeholder="e.g. Budhdhu">
     <label class="ob-lbl">Relationship start date</label>
     <input class="ab-in" id="obSD" type="date" style="color-scheme:dark;">
     <label class="ob-lbl">Partner's birthday</label>
@@ -815,6 +850,7 @@ window.submitOnboarding = async function(){
   if(!bd)     { err.textContent="Partner's birthday? ❤️"; return; }
   try {
     await saveProfile({yourName:yn, partnerName:pn, startDate:sd, birthday:bd, createdAt:Date.now()});
+    window.activeProfile = yn; localStorage.setItem('lf_active_profile', yn);
     await bootApp();
   } catch(e){ err.textContent="Save failed — check connection ❤️"; console.error(e); }
 };
@@ -828,7 +864,10 @@ function updateNavbar(){
   const badge=document.getElementById("profileBadge");
  if(badge){badge.textContent = `${yourName()} ❤️ ${partnerName()}`;}
   const vb=document.getElementById("privateVaultBtn");
-  if(vb) vb.style.display=currentUser?"inline-block":"none"; /* show for all logged-in users */
+  if(vb)vb.style.display =
+    userProfile?.yourName
+        ? "inline-block"
+        : "none";
 }
 
 window.showHome=function(){
@@ -1115,10 +1154,10 @@ function injectWaveCord(){
   svg.id="tlWave"; svg.setAttribute("width","100%"); svg.setAttribute("height",h);
   svg.style.cssText=`position:absolute;top:0;left:0;width:100%;height:${h}px;pointer-events:none;z-index:0;overflow:visible;`;
   const cx=50,amp=18,segs=24,sh=h/segs;
-  let d=`M ${cx}% 0 `;
+  let d=`M ${cx} 0 `;
   for(let i=1;i<=segs;i++){
     const y=i*sh,x=cx+(i%2===0?amp:-amp),cpx=i%2===0?cx-amp*.8:cx+amp*.8,cpy=(i-.5)*sh;
-    d+=`C ${cpx}% ${cpy} ${x}% ${cpy} ${x}% ${y} `;
+    d+=`C ${cpx} ${cpy} ${x} ${cpy} ${x} ${y} `;
   }
   const wave=document.createElementNS("http://www.w3.org/2000/svg","path");
   wave.setAttribute("d",d);wave.setAttribute("fill","none");wave.setAttribute("stroke","rgba(255,0,60,.07)");wave.setAttribute("stroke-width","28");wave.setAttribute("stroke-linecap","round");
@@ -1378,7 +1417,7 @@ window._renderGal=function(){
    PRIVATE VAULT
 ───────────────────────────────────────── */
 window.showPrivate=function(){
-  if(!currentUser) return; /* gate on auth only */
+  if(!VAULT_NAMES.includes(userProfile?.yourName||"")) return;
   document.getElementById("passwordScreen").classList.add("active");
 };
 window.closePasswordScreen=function(){document.getElementById("passwordScreen").classList.remove("active");};
@@ -1808,7 +1847,7 @@ window.toggleSecureMemory = function(el){
    - Auth-screen marketing injector (mock memories + tagline)
    All additive — wraps/extends existing functions, does NOT replace them.
    ═════════════════════════════════════════════════════════════ */
-(function lfPremium(){
+;(function lfPremium(){
   /* ---------- Heart particle generator (perf-aware) ---------- */
   function spawnHearts(){
     const c = document.getElementById('lfHearts');
@@ -2056,7 +2095,9 @@ window.toggleSecureMemory = function(el){
   /* ---------- Boot ---------- */
   function boot(){
     spawnHearts();
-    initReveal();
+    // NOTE: initReveal() removed — initScrollReveal() in bootApp already covers all
+    // .reveal-on-scroll elements. Running two IntersectionObservers on the same
+    // elements caused double-fires and wasted memory.
 
     // Hydrate theme early from localStorage so first paint isn't a flash
     try{
@@ -2064,14 +2105,11 @@ window.toggleSecureMemory = function(el){
       if(cached) applyTheme(cached);
     }catch(e){}
 
-    // Re-apply when profile loads (Firestore wins over local cache)
-    let lastProfileRef = null;
-    setInterval(() => {
-      if(window.userProfile && window.userProfile !== lastProfileRef){
-        lastProfileRef = window.userProfile;
-        applyTheme(window.userProfile.theme);
-      }
-    }, 800);
+    // Re-apply when profile loads (Firestore wins over local cache).
+    // Listen for a custom 'lf:profileLoaded' event fired by bootApp — zero polling.
+    window.addEventListener('lf:profileLoaded', () => {
+      if(window.userProfile?.theme) applyTheme(window.userProfile.theme);
+    }, { once: false });
 
     // Try inject auth marketing repeatedly until auth screen exists & populated
     let tries = 0;
