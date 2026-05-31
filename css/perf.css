@@ -1,0 +1,60 @@
+/* =========================================================
+   LOVEFLIX — perf.css  (load AFTER style.css, BEFORE mobile.css)
+   Cross-browser smoothness wins. Premium feel preserved.
+   ========================================================= */
+
+/* 1. Skip painting + layout for off-screen sections (huge Chrome win).
+      Browsers that don't support content-visibility just ignore this. */
+.timeline-section,
+.netflix-row,
+#rows > section,
+.lf-mock-vault,
+.creator-panel,
+.viewer,
+.password-screen {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 600px; /* placeholder size while off-screen */
+}
+
+/* 2. Stop infinite animations from repainting when off-screen / tab hidden.
+      Chrome already pauses tab-hidden; this also pauses for paused-doc state. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 3. Promote only what truly animates. Strip will-change from idle elements
+      (it eats memory and forces layer creation). */
+.card, .timeline-item, .nav-btn { will-change: auto; }
+.card:hover, .timeline-item:hover { will-change: transform; }
+
+/* 4. Image decode hint so big posters don't block the main thread.
+      Scoped to heavy thumbnails only — applying to every <img> can cause
+      layout jumps on small icons without explicit width/height. */
+.netflix-row img,
+.timeline-item img,
+.lf-mock-thumb img,
+.viewer img { content-visibility: auto; }
+
+/* 5. Smoother scroll on iOS Safari + remove tap-highlight flash. */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* 6. Slightly tone down desktop blurs (still premium glass, half the cost).
+      Mobile gets stripped entirely in mobile.css. */
+@media (min-width: 769px) {
+  .navbar              { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .timeline-game-modal,
+  .viewer,
+  .creator-panel,
+  .password-screen     { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .image-counter,
+  .lf-mock-thumb-meta  { backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+}
