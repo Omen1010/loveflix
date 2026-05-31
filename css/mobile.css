@@ -1,0 +1,211 @@
+/* =========================================================
+   LOVEFLIX — mobile.css  (load LAST, after style.css + perf.css)
+   Mobile-first Instagram-grade polish for ≤768px.
+   Goals: clean, compact, fast, big tap targets, zero blur cost.
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  /* ---------- 0. KILL EVERY BACKDROP-FILTER ON MOBILE ----------
+     Single biggest perf win on phones. Falls back to a flat tint. */
+  *, *::before, *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Replace lost blur with a solid translucent panel so things still
+     look layered. */
+  .navbar              { background: rgba(5,5,5,0.92) !important; }
+  .timeline-game-modal,
+  .viewer,
+  .creator-panel,
+  .password-screen     { background: rgba(5,5,5,0.96) !important; }
+  .lf-theme-panel,
+  .lf-chat-panel       { background: #0a0204 !important; }
+
+  /* ---------- 1. CURSOR OFF (already handled, but enforce) ---------- */
+  body { cursor: auto !important; }
+  #customCursor, #customCursorRing { display: none !important; }
+
+  /* ---------- 2. NAVBAR — Instagram top bar ---------- */
+  .navbar {
+    padding: 10px 14px !important;
+    height: 54px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .logo {
+    font-size: 1.25rem !important;
+    letter-spacing: 2px !important;
+  }
+  .nav-right { gap: 6px !important; }
+  .nav-btn {
+    width: 40px; height: 40px;
+    padding: 0 !important;
+    font-size: 1.1rem !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .nav-btn:hover { transform: none !important; box-shadow: none !important; }
+  .nav-btn.logout-btn { font-size: 0 !important; width: 40px; }
+  .nav-btn.logout-btn::before { content: "🚪"; font-size: 1.1rem; }
+  .lf-couple-pill { display: none !important; }
+  .profile-badge { width: 32px; height: 32px; font-size: 0.85rem; }
+
+  /* ---------- 3. HERO — taller, edge-to-edge, less stuffed ---------- */
+  .hero, .home-hero {
+    min-height: 88vh;
+    padding: 80px 18px 40px !important;
+  }
+  .hero-content { max-width: 100%; }
+  .hero-content h1 {
+    font-size: clamp(2rem, 9vw, 3rem) !important;
+    line-height: 1.05;
+    margin-bottom: 14px;
+  }
+  .hero-content p {
+    font-size: 0.95rem !important;
+    line-height: 1.55;
+    margin-bottom: 22px;
+  }
+  .hero-buttons {
+    display: flex; flex-direction: column; gap: 10px;
+    width: 100%;
+  }
+  .hero-buttons .play-btn,
+  .hero-buttons .info-btn,
+  .hero-buttons .play-btn.hero-play {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px !important;
+    font-size: 0.95rem;
+  }
+  .hero-stats {
+    margin-top: 24px;
+    gap: 18px !important;
+    flex-wrap: wrap;
+  }
+  .hero-stat-value { font-size: 1.4rem !important; }
+  .hero-stat-label { font-size: 0.65rem !important; }
+  .hero-marquee-wrap { display: none; } /* declutter */
+
+  /* ---------- 4. CARDS / ROWS — Instagram 2-col feed feel ---------- */
+  .netflix-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    overflow: visible !important;
+    padding: 0 12px;
+  }
+  .card {
+    width: 100% !important;
+    min-width: 0 !important;
+    aspect-ratio: 3 / 4;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .card img { width: 100%; height: 100%; object-fit: cover; }
+  .card-overlay {
+    padding: 10px !important;
+    background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+  }
+  .card-overlay h3 { font-size: 0.85rem !important; line-height: 1.2; }
+  .card-overlay p  { font-size: 0.7rem !important; opacity: 0.7; }
+  .card-actions {
+    flex-wrap: wrap; gap: 4px;
+  }
+  .card-actions button {
+    padding: 6px 8px !important;
+    font-size: 0.7rem !important;
+  }
+  #rows > section { margin-bottom: 28px; }
+  #rows > section > h2 {
+    padding: 0 14px;
+    font-size: 1.05rem !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* ---------- 5. TIMELINE — single-column rail (clean) ---------- */
+  .timeline-section { padding: 50px 0 !important; }
+  .timeline-section-header { margin-bottom: 30px; padding: 0 18px; }
+  .timeline-section-header h2 { font-size: 1.6rem !important; }
+  .timeline { padding: 0 0 0 28px !important; }
+  .timeline-cord { left: 12px !important; transform: none !important; }
+  .timeline-item,
+  .timeline-item:nth-child(odd),
+  .timeline-item:nth-child(even) {
+    width: 100% !important;
+    left: 0 !important;
+    text-align: left !important;
+    margin-top: 0 !important;
+    padding: 12px 18px 12px 12px !important;
+  }
+  .timeline-item::before { display: none !important; }
+  .timeline-dot,
+  .timeline-item:nth-child(odd) .timeline-dot,
+  .timeline-item:nth-child(even) .timeline-dot {
+    left: -22px !important; right: auto !important;
+    transform: translateX(-50%) !important;
+    top: 22px;
+  }
+  .timeline-content { padding: 14px !important; }
+  .timeline-content h3 { font-size: 1rem !important; }
+  .timeline-content p  { font-size: 0.85rem !important; }
+
+  /* ---------- 6. MODALS / VIEWERS — full-screen sheets ---------- */
+  .viewer img { width: 100% !important; max-height: 78vh !important; border-radius: 12px !important; }
+  .image-counter {
+    bottom: 16px !important;
+    font-size: 0.75rem;
+    padding: 6px 12px !important;
+  }
+  .creator-panel { padding: 14px !important; }
+  .tgm-box { padding: 22px 18px !important; }
+  .tgm-box h2 { font-size: 1.25rem !important; }
+  .tgm-box p  { font-size: 0.9rem !important; }
+
+  /* ---------- 7. CHAT + THEME panels = bottom sheets ---------- */
+  .lf-chat-panel, .lf-theme-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 88vh !important;
+    top: auto !important; bottom: 0 !important;
+    left: 0 !important; right: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255,0,60,0.25) !important;
+  }
+  .lf-chat-panel.open, .lf-theme-panel.open {
+    transform: translateY(0) !important;
+  }
+  .lf-chat-panel:not(.open), .lf-theme-panel:not(.open) {
+    transform: translateY(100%) !important;
+  }
+
+  /* ---------- 8. PROFILE PICKER — 3 across, bigger taps ---------- */
+  .profile-grid {
+    gap: 18px !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .profile-avatar { width: 76px !important; height: 76px !important; font-size: 1.6rem !important; }
+  .profile-name   { font-size: 0.78rem !important; }
+
+  /* ---------- 9. KILL DECORATIVE PERF EATERS ON MOBILE ---------- */
+  .hero-particles { display: none !important; }
+  .badge-heart    { animation: none !important; }
+  .timeline-item.unlocking-soon .timeline-content { animation: none !important; }
+  .timeline-item.newly-unlocked .timeline-content { animation: none !important; }
+
+  /* ---------- 10. TAP TARGETS ---------- */
+  button, a, [onclick] { min-height: 40px; }
+  input, select, textarea { font-size: 16px !important; } /* prevents iOS zoom */
+}
+
+/* Tiny phones — tighten further */
+@media (max-width: 380px) {
+  .netflix-row { grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 10px; }
+  .hero-content h1 { font-size: 1.85rem !important; }
+  .nav-btn { width: 36px; height: 36px; }
+  .profile-grid { gap: 12px !important; }
+  .profile-avatar { width: 66px !important; height: 66px !important; }
+}
