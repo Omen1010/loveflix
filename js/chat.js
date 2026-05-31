@@ -135,14 +135,30 @@ import {
   }
   /* Auto-pick role from the active profile's yourName / partnerName
      so neither of you has to tap "who's on this phone" again. */
-  function autoRoleFromActiveProfile(){
-    try{
-      const active = (window.activeProfile || localStorage.getItem('lf_active_profile') || '').toLowerCase();
-      if(active === 'omen')    return 'p1';
-      if(active === 'budhdhu') return 'p2';
-    }catch(_){}
-    return null;
-  }
+function autoRoleFromActiveProfile(){
+
+  const active =
+    (window.activeProfile ||
+     localStorage.getItem('lf_active_profile') ||
+     '')
+      .trim()
+      .toLowerCase();
+
+  const yourName =
+    (window.userProfile?.yourName || '')
+      .trim()
+      .toLowerCase();
+
+  const partnerName =
+    (window.userProfile?.partnerName || '')
+      .trim()
+      .toLowerCase();
+
+  if(active === yourName) return 'p1';
+  if(active === partnerName) return 'p2';
+
+  return null;
+}
   function askRole(cb){
     ensureDom();
     // Skip the picker if we already know who you are from the profile screen
@@ -243,6 +259,15 @@ import {
     $('lfChatPanel').classList.add('open');
     $('lfChatBackdrop').classList.add('open');
     subscribe();
+    // iOS Safari: unlock audio on this user gesture so future ping.play() works
+    try {
+      const a = document.getElementById('lfChatPing');
+      if (a && !a.__lfUnlocked) {
+        a.__lfUnlocked = true;
+        const v = a.volume; a.volume = 0;
+        a.play().then(()=>{ a.pause(); a.currentTime = 0; a.volume = v; }).catch(()=>{ a.volume = v; });
+      }
+    } catch(_) {}
     setTimeout(()=> { $('lfChatInput').focus(); scrollBottom(); }, 60);
   }
   function closeChat(){
