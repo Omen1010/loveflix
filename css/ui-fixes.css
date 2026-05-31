@@ -1,0 +1,833 @@
+/* =============================================================
+   LOVEFLIX — ui-fixes.css
+   Load this AFTER style.css / newstyle.css in your <head>.
+   Fixes:
+     1. Desktop navbar — icon buttons properly styled (chat/theme/vault)
+     2. Logout button — subtle ghost, not a big red block
+     3. Couple pill — visible and readable
+     4. Full mobile navbar overhaul (Instagram-grade)
+     5. Mobile hero, cards, sections, modals, FAB — premium feel
+     6. Chat + Theme panels slide up as bottom sheets on mobile
+   Nothing in this file touches JS or HTML.
+============================================================= */
+
+/* ─────────────────────────────────────────────────────────────
+   1. DESKTOP NAVBAR  (≥769px)
+   Goal: Chat / Theme / Vault as clean icon-pill buttons,
+         Logout as a quiet ghost. Couple pill centred + readable.
+───────────────────────────────────────────────────────────── */
+
+/* Reset: strip the universal red from EVERY nav-btn on desktop */
+@media (min-width: 769px) {
+
+  .navbar {
+    padding: 14px 36px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.88) 0%, transparent 100%);
+  }
+  .navbar.scrolled {
+    background: rgba(6,1,3,0.96);
+    box-shadow: 0 1px 0 rgba(255,0,60,0.10);
+  }
+
+  /* Base reset — all nav buttons are icon-pills, not big red boxes */
+  .nav-right .nav-btn,
+  .nav-right .lf-theme-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.9);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    box-shadow: none;
+    will-change: auto;
+    white-space: nowrap;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .nav-right .nav-btn:hover,
+  .nav-right .lf-theme-btn:hover {
+    background: rgba(255,255,255,0.13);
+    border-color: rgba(255,255,255,0.28);
+    transform: translateY(-1px);
+    box-shadow: none;
+  }
+
+  /* ── Chat button: icon + label + badge ── */
+  .nav-right .lf-chat-nav-btn {
+    gap: 5px;
+  }
+  .nav-right .lf-chat-nav-btn .lf-chat-badge {
+    background: var(--lf-accent, #ff003c);
+    font-size: 0.65rem;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+  }
+
+  /* ── Theme button: keep ghost pill look ── */
+  .nav-right .lf-theme-btn {
+    border-color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+  }
+  .nav-right .lf-theme-btn:hover {
+    border-color: var(--lf-accent, #ff003c);
+    color: var(--lf-accent, #ff003c);
+  }
+
+  /* ── Private Vault: slight accent tint so it stands out softly ── */
+  .nav-right #privateVaultBtn {
+    border-color: rgba(255,0,60,0.35);
+    color: rgba(255,180,180,0.95);
+    background: rgba(255,0,60,0.08);
+  }
+  .nav-right #privateVaultBtn:hover {
+    background: rgba(255,0,60,0.18);
+    border-color: rgba(255,0,60,0.6);
+    color: #fff;
+  }
+
+  /* ── Logout: quiet ghost — smallest presence ── */
+  .nav-right .nav-btn-ghost,
+  .nav-right .logout-btn {
+    background: transparent !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: rgba(255,255,255,0.5) !important;
+    font-size: 0.76rem !important;
+    padding: 0 12px !important;
+    height: 34px;
+  }
+  .nav-right .nav-btn-ghost:hover,
+  .nav-right .logout-btn:hover {
+    background: rgba(255,255,255,0.07) !important;
+    border-color: rgba(255,255,255,0.22) !important;
+    color: rgba(255,255,255,0.8) !important;
+    box-shadow: none !important;
+    transform: none;
+  }
+
+  /* ── Couple pill ── */
+  .lf-couple-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: rgba(255,0,60,0.10);
+    border: 1px solid rgba(255,0,60,0.22);
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.88);
+    font-style: italic;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── Nav right gap tightened ── */
+  .nav-right {
+    gap: 8px;
+  }
+
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. MOBILE NAVBAR  (≤768px)
+   Instagram-grade: thin top bar, icon-only buttons in a row,
+   no text wasting space. Safe-area aware.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+
+  /* Kill all expensive blurs first */
+  * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+  /* ── Top bar ── */
+  .navbar {
+    padding: 0 14px !important;
+    height: 52px !important;
+    background: rgba(6,1,3,0.94) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+  }
+  .navbar.scrolled {
+    background: rgba(6,1,3,0.98) !important;
+  }
+
+  /* Logo */
+  .logo {
+    font-size: 1.35rem !important;
+    letter-spacing: 2px !important;
+    flex-shrink: 0;
+  }
+
+  /* Nav right: push to far right, no gap overflow */
+  .nav-right {
+    margin-left: auto;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Hide text-heavy items */
+  .lf-couple-pill  { display: none !important; }
+  #profileBadge    { display: none !important; }
+
+  /* ── All nav buttons → 40×40 icon circles ── */
+  .nav-right .nav-btn,
+  .nav-right .lf-theme-btn,
+  .nav-right .lf-chat-nav-btn {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    font-size: 0 !important;           /* hide text */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0;
+    color: rgba(255,255,255,0.85) !important;
+    transition: background 0.15s ease !important;
+  }
+  .nav-right .nav-btn:hover,
+  .nav-right .lf-theme-btn:hover {
+    background: rgba(255,255,255,0.08) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  .nav-right .nav-btn:active,
+  .nav-right .lf-theme-btn:active {
+    background: rgba(255,255,255,0.14) !important;
+  }
+
+  /* Inject emoji icons via ::before — no HTML change needed */
+  .lf-chat-nav-btn::before  { content: "💌"; font-size: 1.15rem; }
+  .lf-theme-btn::before     { content: "🎨"; font-size: 1.1rem;  }
+  #privateVaultBtn::before  { content: "🔒"; font-size: 1.1rem;  }
+  .nav-btn-ghost::before    { content: "⎋";  font-size: 1.1rem;  }
+
+  /* Logout specifically */
+  .nav-right .nav-btn-ghost {
+    color: rgba(255,255,255,0.5) !important;
+  }
+  .nav-right .nav-btn-ghost::before { content: "↗"; font-size: 1.1rem; }
+
+  /* Chat badge position fix */
+  .lf-chat-nav-btn {
+    position: relative !important;
+  }
+  .lf-chat-badge {
+    position: absolute;
+    top: 4px; right: 4px;
+    min-width: 14px; height: 14px;
+    font-size: 0.6rem;
+    background: var(--lf-accent, #ff003c);
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3px;
+    pointer-events: none;
+  }
+
+/* ─────────────────────────────────────────────────────────────
+   3. MOBILE HERO
+───────────────────────────────────────────────────────────── */
+
+  .hero, .home-hero {
+    min-height: calc(var(--vh, 1vh) * 85) !important;
+    height: auto !important;
+    padding: 70px 20px 44px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+  }
+
+  .hero-content {
+    max-width: 100% !important;
+    padding-bottom: 0;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(2.1rem, 8vw, 3rem) !important;
+    line-height: 1.04 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .hero-content p {
+    font-size: 0.94rem !important;
+    line-height: 1.55 !important;
+    color: rgba(255,255,255,0.8) !important;
+    margin-bottom: 20px !important;
+  }
+
+  .hero-stats {
+    gap: 22px !important;
+    margin-bottom: 18px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .hero-stat-value { font-size: 1.3rem !important; }
+  .hero-stat-label { font-size: 0.6rem !important; letter-spacing: 1.5px !important; }
+
+  .hero-buttons {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+  }
+
+  .hero-buttons .play-btn.hero-play,
+  .hero-buttons .lf-cta-secondary {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 15px 20px !important;
+    font-size: 0.94rem !important;
+    border-radius: 50px !important;
+  }
+
+  .hero-marquee-wrap { display: none !important; }
+
+  /* Hero particles — keep but reduce opacity so not distracting */
+  .hero-particles { opacity: 0.4; }
+  .lf-hearts span { opacity: 0.5; }
+
+/* ─────────────────────────────────────────────────────────────
+   4. MOBILE MEMORY ROWS / CARDS
+───────────────────────────────────────────────────────────── */
+
+  .section {
+    padding: 20px 14px !important;
+  }
+
+  .section h2 {
+    font-size: 1.1rem !important;
+    margin-bottom: 14px !important;
+  }
+
+  /* Netflix rows → horizontal scroll, snap, comfortable card size */
+  .netflix-row {
+    gap: 10px !important;
+    padding-bottom: 8px !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  /* Dim-cascade on hover kills touch — disable */
+  .netflix-row:hover .card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .card {
+    min-width: 150px !important;
+    max-width: 150px !important;
+    height: 220px !important;
+    border-radius: 16px !important;
+    scroll-snap-align: start;
+    will-change: auto !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5) !important;
+  }
+  .card:hover {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .card img, .memory-grid-card img, .gallery-card img {
+    transform: none !important;
+    filter: none !important;
+  }
+  .card-overlay { padding: 12px !important; }
+  .card-overlay h3 { font-size: 0.82rem !important; margin-bottom: 4px !important; }
+  .card-overlay p  { font-size: 0.68rem !important; margin-bottom: 8px !important; }
+  .card-actions button {
+    font-size: 0.62rem !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+  }
+
+/* ─────────────────────────────────────────────────────────────
+   5. MOBILE TIMELINE
+───────────────────────────────────────────────────────────── */
+
+  .timeline-section {
+    padding: 44px 0 60px !important;
+    overflow: hidden !important;
+  }
+
+  .timeline-section-header {
+    padding: 0 18px;
+    margin-bottom: 28px !important;
+  }
+
+  .timeline-section-header h2 { font-size: 1.55rem !important; }
+
+  .timeline {
+    padding: 0 0 0 14px !important;
+  }
+
+  .timeline-cord {
+    left: 20px !important;
+    transform: none !important;
+  }
+
+  .timeline-item,
+  .timeline-item:nth-child(odd),
+  .timeline-item:nth-child(even),
+  .timeline-item:nth-child(4n+1),
+  .timeline-item:nth-child(4n+2),
+  .timeline-item:nth-child(4n+3),
+  .timeline-item:nth-child(4n) {
+    width: calc(100% - 52px) !important;
+    left: 52px !important;
+    text-align: left !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 22px !important;
+  }
+
+  .timeline-item::before { display: none !important; }
+
+  .timeline-dot,
+  .timeline-item:nth-child(odd)  .timeline-dot,
+  .timeline-item:nth-child(even) .timeline-dot {
+    left: -36px !important;
+    right: auto !important;
+    top: 16px !important;
+    transform: none !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .timeline-dot::after {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.58rem !important;
+  }
+
+  /* Kill expensive pulse on mobile */
+  .timeline-dot::before { animation: none !important; opacity: 0.3 !important; }
+
+  .timeline-content {
+    padding: 14px !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+  }
+  .timeline-content h3 { font-size: 0.96rem !important; }
+  .timeline-content p  { font-size: 0.82rem !important; line-height: 1.5 !important; }
+  .timeline-year { font-size: 0.7rem !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   6. MOBILE GAMES
+───────────────────────────────────────────────────────────── */
+
+  .bored-section {
+    padding: 44px 14px !important;
+  }
+
+  .bored-header h2 { font-size: 1.35rem !important; }
+
+  .games-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .game-card {
+    padding: 18px 14px !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+  }
+
+  .game-card-icon {
+    font-size: 1.7rem !important;
+    margin-bottom: 10px !important;
+    animation: none !important;
+  }
+
+  .game-card h3 { font-size: 0.9rem !important; }
+  .game-card p  { font-size: 0.74rem !important; margin-bottom: 12px !important; }
+  .game-play-btn { font-size: 0.72rem !important; padding: 7px 13px !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   7. MOBILE MODALS — bottom-sheet style
+───────────────────────────────────────────────────────────── */
+
+  .creator-panel,
+  .password-screen {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .creator-box,
+  .password-box {
+    width: 100% !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    border-radius: 24px 24px 0 0 !important;
+    padding: 28px 20px !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    border-top: 1px solid rgba(255,0,60,0.2) !important;
+    animation: slideUpSheet 0.32s cubic-bezier(0.2,0.8,0.2,1) !important;
+  }
+
+  @keyframes slideUpSheet {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .creator-box h2 { font-size: 1.35rem !important; }
+
+  .creator-box input,
+  .creator-box textarea,
+  .password-box input {
+    font-size: 16px !important; /* prevents iOS zoom */
+  }
+
+  /* Game modal */
+  .game-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .game-modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 88vh !important;
+    border-radius: 24px 24px 0 0 !important;
+    padding: 28px 18px 36px !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    animation: slideUpSheet 0.32s cubic-bezier(0.2,0.8,0.2,1) !important;
+  }
+
+  /* Timeline game modal */
+  .timeline-game-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .tgm-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 24px 24px 0 0 !important;
+    padding: 26px 18px 32px !important;
+    animation: slideUpSheet 0.32s cubic-bezier(0.2,0.8,0.2,1) !important;
+  }
+
+  .tgm-choice-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+
+  /* WYR options single col */
+  .wyr-options { grid-template-columns: 1fr !important; gap: 9px !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   8. CHAT + THEME PANELS — slide up from bottom on mobile
+───────────────────────────────────────────────────────────── */
+
+  /* Chat panel */
+  .lf-chat-panel {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 90dvh !important;
+    max-width: 100% !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255,0,60,0.2) !important;
+    transform: translateY(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.2,0.8,0.2,1) !important;
+  }
+  .lf-chat-panel.open {
+    transform: translateY(0) !important;
+  }
+
+  /* Drag handle on panels */
+  .lf-chat-panel::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 999px;
+    margin: 10px auto 0;
+  }
+
+  .lf-chat-head {
+    padding: 12px 16px 10px !important;
+  }
+
+  .lf-chat-body {
+    padding: 12px 14px !important;
+  }
+
+  .lf-compose-input textarea {
+    font-size: 16px !important; /* prevents iOS zoom */
+  }
+
+  .lf-chat-compose {
+    padding-bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .lf-msg { max-width: 80% !important; }
+
+  /* Theme panel */
+  .lf-theme-panel {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 88vh !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255,0,60,0.2) !important;
+    /* Panel is off-screen right by default — override that */
+    right: 0 !important;
+    transform: translateY(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.2,0.8,0.2,1) !important;
+    /* Must override the right-based slide used on desktop */
+  }
+  .lf-theme-panel.open {
+    transform: translateY(0) !important;
+    right: 0 !important;
+  }
+
+  .lf-theme-panel::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 999px;
+    margin: 10px auto 2px;
+  }
+
+  .lf-presets {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+/* ─────────────────────────────────────────────────────────────
+   9. FAB (Create Memory) — clean circular button, bottom right
+───────────────────────────────────────────────────────────── */
+
+  .create-memory-btn {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    bottom: 20px !important;
+    right: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 6px 20px rgba(229,0,58,0.55) !important;
+  }
+
+  .create-memory-btn::before {
+    content: "+";
+    font-size: 1.9rem;
+    font-weight: 300;
+    line-height: 1;
+    color: white;
+  }
+
+  /* Moon button — keep visible, slightly smaller */
+  .secret-trigger {
+    width: 46px !important;
+    height: 46px !important;
+    bottom: 20px !important;
+    left: 16px !important;
+    font-size: 1.3rem !important;
+  }
+
+/* ─────────────────────────────────────────────────────────────
+   10. MOBILE GALLERY
+───────────────────────────────────────────────────────────── */
+
+  .gallery-grid { column-count: 2 !important; column-gap: 7px !important; }
+  .gallery-grid .gallery-card {
+    border-radius: 10px !important;
+    margin-bottom: 7px !important;
+  }
+  .gallery-grid .gallery-card .img-delete-btn {
+    opacity: 1 !important;
+    transform: scale(1) !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .video-grid-layout { column-count: 1 !important; }
+
+  /* Upload queue */
+  #uploadQueue {
+    bottom: 86px !important;
+    left: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 300px !important;
+  }
+
+/* ─────────────────────────────────────────────────────────────
+   11. MARKETING SECTIONS — single column, breathable
+───────────────────────────────────────────────────────────── */
+
+  .lf-section { padding: 44px 16px !important; }
+
+  .lf-section-head h2 {
+    font-size: clamp(1.5rem, 6vw, 2rem) !important;
+  }
+
+  .lf-mock-grid,
+  .lf-features,
+  .lf-testis {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .lf-feature { padding: 20px !important; }
+
+  .lf-cta-band {
+    padding: 60px 18px !important;
+  }
+
+  .lf-cta-band h2 {
+    font-size: clamp(1.6rem, 6vw, 2.2rem) !important;
+  }
+
+  .lf-cta-big {
+    padding: 16px 28px !important;
+    font-size: 0.82rem !important;
+  }
+
+/* ─────────────────────────────────────────────────────────────
+   12. VIEWER — full-screen on mobile
+───────────────────────────────────────────────────────────── */
+
+  .viewer img {
+    width: 100% !important;
+    max-height: 78vh !important;
+    border-radius: 12px !important;
+    object-fit: contain !important;
+  }
+
+  .viewer-btn {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1.2rem !important;
+  }
+
+  .left-btn  { left: 6px !important; }
+  .right-btn { right: 6px !important; }
+
+  .close {
+    top: 16px !important;
+    right: 18px !important;
+    font-size: 2.2rem !important;
+  }
+
+  .image-counter {
+    bottom: 16px !important;
+    font-size: 0.75rem !important;
+    padding: 7px 14px !important;
+  }
+
+/* ─────────────────────────────────────────────────────────────
+   13. GLOBAL TOUCH QUALITY
+───────────────────────────────────────────────────────────── */
+
+  body { cursor: auto !important; -webkit-tap-highlight-color: transparent; }
+  #customCursor, #customCursorRing { display: none !important; }
+
+  button, a, [onclick], input, select, textarea {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input, select, textarea { font-size: 16px; } /* always prevents iOS zoom */
+
+  section { overflow: hidden; }
+
+  html, body { overflow-x: hidden; }
+
+} /* end @media (max-width: 768px) */
+
+/* ─────────────────────────────────────────────────────────────
+   14. SMALL PHONES  (≤390px)  — extra tightening
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 390px) {
+
+  .logo { font-size: 1.2rem !important; letter-spacing: 1.5px !important; }
+
+  .nav-right .nav-btn,
+  .nav-right .lf-theme-btn,
+  .nav-right .lf-chat-nav-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .hero-content h1 { font-size: 1.9rem !important; }
+
+  .games-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+
+  .game-card { padding: 14px 12px !important; }
+  .game-card h3 { font-size: 0.85rem !important; }
+
+  .card {
+    min-width: 135px !important;
+    max-width: 135px !important;
+    height: 200px !important;
+  }
+
+  .create-memory-btn {
+    width: 50px !important;
+    height: 50px !important;
+    bottom: 16px !important;
+    right: 12px !important;
+  }
+
+  .secret-trigger {
+    width: 40px !important;
+    height: 40px !important;
+    bottom: 16px !important;
+    left: 12px !important;
+    font-size: 1.1rem !important;
+  }
+
+}
+
+/* ─────────────────────────────────────────────────────────────
+   15. REDUCED MOTION  — respect user preference
+───────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-bgimg { animation: none !important; }
+  .lf-hearts span { animation: none !important; display: none !important; }
+  .hero-particle  { animation: none !important; display: none !important; }
+  .badge-heart    { animation: none !important; }
+  .timeline-dot::before { animation: none !important; }
+  .game-card-icon { animation: none !important; }
+  .reveal-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
