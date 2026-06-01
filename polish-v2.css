@@ -1,0 +1,402 @@
+/* ============================================================
+   LOVEFLIX — Polish v2
+   Load AFTER polish.css. Purely additive overrides.
+   Fixes:
+     1. Login screen — premium glassmorphic card + soft aurora bg
+     2. Timeline ("Our Story So Far") — kill the pink bleed
+     3. Minor: tighten card glow consistency
+   ============================================================ */
+
+/* ---------- 1. LOGIN SCREEN GLOW-UP -------------------------- */
+
+/* Aurora backdrop behind the auth screen */
+.auth-screen,
+#auth-screen,
+.login-screen,
+body.is-auth {
+  position: relative;
+  background:
+    radial-gradient(60% 50% at 18% 28%, rgba(190, 30, 70, 0.28), transparent 70%),
+    radial-gradient(55% 45% at 82% 78%, rgba(120, 40, 90, 0.22), transparent 72%),
+    radial-gradient(40% 35% at 50% 110%, rgba(220, 60, 90, 0.18), transparent 70%),
+    #07070b !important;
+}
+
+/* Soft animated grain / glow layer */
+.auth-screen::before,
+#auth-screen::before,
+.login-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.35), transparent 60%),
+    radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,0.22), transparent 60%),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.18), transparent 60%);
+  background-size: 220px 220px, 320px 320px, 280px 280px;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  animation: lfStars 18s linear infinite;
+}
+@keyframes lfStars {
+  to { background-position: 220px 220px, -320px 320px, 280px -280px; }
+}
+
+/* The auth card itself — glassmorphism */
+.auth-card,
+.login-card,
+.signin-card,
+form.auth,
+form.login-form {
+  background:
+    linear-gradient(180deg, rgba(22,8,16,0.78), rgba(12,6,12,0.72)) !important;
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 200, 215, 0.10) !important;
+  border-radius: 22px !important;
+  box-shadow:
+    0 30px 80px -20px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 0 60px -10px rgba(190, 40, 80, 0.35) !important;
+  padding: 38px 32px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle conic gradient ring on the card edge */
+.auth-card::after,
+.login-card::after,
+form.auth::after,
+form.login-form::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from 140deg,
+    rgba(255, 90, 130, 0.55),
+    rgba(120, 30, 80, 0.0) 30%,
+    rgba(255, 180, 130, 0.35) 55%,
+    rgba(120, 30, 80, 0.0) 80%,
+    rgba(255, 90, 130, 0.55)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+/* Brand wordmark on auth */
+.auth-card .brand,
+.auth-card .lf-logo,
+.auth-screen .brand,
+#auth-screen .brand {
+  font-family: "Playfair Display", serif !important;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #ffe9ef 0%, #ff6a8a 55%, #c9224a 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent !important;
+  text-shadow: 0 0 30px rgba(255, 60, 100, 0.25);
+}
+
+/* "Welcome back" header */
+.auth-card h1,
+.auth-card h2,
+.login-card h1,
+.login-card h2 {
+  font-family: "Playfair Display", serif !important;
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(26px, 3.2vw, 34px);
+  background: linear-gradient(180deg, #fff 0%, #ffd2dd 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent !important;
+  margin: 6px 0 4px;
+}
+
+.auth-card .subtitle,
+.auth-card p.muted,
+.login-card .subtitle {
+  color: rgba(255, 220, 230, 0.55) !important;
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+}
+
+/* Inputs — premium feel */
+.auth-card input,
+.login-card input,
+form.auth input,
+form.login-form input {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255, 200, 215, 0.08) !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  padding: 14px 16px !important;
+  font-size: 14.5px !important;
+  transition: border-color .25s ease, background .25s ease, box-shadow .25s ease;
+}
+.auth-card input::placeholder,
+.login-card input::placeholder {
+  color: rgba(255, 220, 230, 0.35) !important;
+  letter-spacing: 0.02em;
+}
+.auth-card input:focus,
+.login-card input:focus,
+form.auth input:focus,
+form.login-form input:focus {
+  outline: none !important;
+  border-color: rgba(255, 110, 140, 0.55) !important;
+  background: rgba(255,255,255,0.05) !important;
+  box-shadow:
+    0 0 0 4px rgba(255, 80, 120, 0.10),
+    0 0 30px -5px rgba(255, 80, 120, 0.25) !important;
+}
+
+/* Primary CTA — Sign In */
+.auth-card button[type="submit"],
+.login-card button[type="submit"],
+form.auth button[type="submit"],
+form.login-form button[type="submit"],
+.btn-signin,
+.signin-btn {
+  background: linear-gradient(180deg, #ff3a66 0%, #d61a48 55%, #a8123a 100%) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 12px !important;
+  padding: 14px 18px !important;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #fff !important;
+  box-shadow:
+    0 14px 30px -8px rgba(214, 26, 72, 0.55),
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 -10px 18px -10px rgba(0,0,0,0.4) inset;
+  transition: transform .18s ease, box-shadow .25s ease, filter .25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.auth-card button[type="submit"]:hover,
+.login-card button[type="submit"]:hover,
+form.auth button[type="submit"]:hover,
+.btn-signin:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 18px 40px -8px rgba(214, 26, 72, 0.7),
+    0 1px 0 rgba(255,255,255,0.2) inset,
+    0 -10px 18px -10px rgba(0,0,0,0.4) inset;
+}
+.auth-card button[type="submit"]::after,
+.login-card button[type="submit"]::after,
+.btn-signin::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform .8s ease;
+}
+.auth-card button[type="submit"]:hover::after,
+.btn-signin:hover::after { transform: translateX(120%); }
+
+/* "or" divider */
+.auth-card .divider,
+.login-card .divider,
+.auth-card .or,
+.login-card .or {
+  display: flex; align-items: center; gap: 12px;
+  color: rgba(255,220,230,0.4);
+  font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+  margin: 18px 0;
+}
+.auth-card .divider::before,
+.auth-card .divider::after,
+.login-card .divider::before,
+.login-card .divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,200,215,0.18), transparent);
+}
+
+/* Google button */
+.btn-google,
+.google-signin,
+.auth-card .btn-oauth {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  font-weight: 500;
+  transition: background .2s ease, border-color .2s ease, transform .15s ease;
+}
+.btn-google:hover,
+.google-signin:hover {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  transform: translateY(-1px);
+}
+
+/* "No account? Sign up" footer link */
+.auth-card a,
+.login-card a {
+  color: #ff8aa5 !important;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(255, 138, 165, 0.4);
+  transition: color .2s ease, border-color .2s ease;
+}
+.auth-card a:hover,
+.login-card a:hover {
+  color: #ffb3c4 !important;
+  border-color: rgba(255, 179, 196, 0.7);
+}
+
+/* Right-side image strip — let it breathe */
+.auth-screen .hero-strip img,
+.auth-screen .preview img,
+#auth-screen img.preview {
+  border-radius: 18px !important;
+  box-shadow:
+    0 30px 80px -20px rgba(0,0,0,0.7),
+    0 0 40px -10px rgba(255,60,100,0.25);
+}
+
+
+/* ---------- 2. TIMELINE — KILL THE PINK BLEED ---------------- */
+
+/* The screenshot shows a giant rose/wine wash filling the whole
+   "Our Story So Far" section. That's a radial/linear gradient
+   on .timeline-section (or similar) leaking out. Neutralize it. */
+
+.timeline-section,
+#timeline,
+.section.timeline,
+section.timeline,
+.story-section,
+#our-story {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* If a ::before / ::after is painting the wash, kill it but keep
+   tiny decorative dots intact (we re-add a subtle one below). */
+.timeline-section::before,
+.timeline-section::after,
+#timeline::before,
+#timeline::after,
+.story-section::before,
+.story-section::after {
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  opacity: 0 !important;
+}
+
+/* Re-introduce a very soft, contained ambient glow behind the
+   section header only — not the whole section. */
+.timeline-section .section-header,
+#timeline .section-header,
+.story-section .section-header {
+  position: relative;
+}
+.timeline-section .section-header::after,
+#timeline .section-header::after,
+.story-section .section-header::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(680px, 80%);
+  height: 220px;
+  background: radial-gradient(closest-side, rgba(190,40,80,0.22), transparent 70%);
+  filter: blur(20px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Timeline cards — restore the deep card look (no flat pink) */
+.timeline-card,
+.story-card,
+.timeline .card,
+#timeline .card {
+  background:
+    linear-gradient(180deg, rgba(28,10,18,0.85), rgba(14,6,12,0.85)) !important;
+  border: 1px solid rgba(255, 200, 215, 0.10) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 24px 50px -20px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 0 30px -10px rgba(190, 40, 80, 0.25) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Central spine — keep it slim and elegant */
+.timeline-spine,
+.timeline .spine,
+#timeline .spine,
+.timeline::before {
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(255, 110, 140, 0.35) 12%,
+    rgba(255, 110, 140, 0.55) 50%,
+    rgba(255, 110, 140, 0.35) 88%,
+    transparent 100%) !important;
+  width: 2px !important;
+  box-shadow: 0 0 18px rgba(255, 90, 120, 0.35) !important;
+}
+
+/* Year/date pills */
+.timeline-card .year,
+.story-card .year,
+.timeline-card .date {
+  color: #ffc56a !important;
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+/* Heart node on the spine */
+.timeline-node,
+.story-node,
+.timeline .node {
+  background: radial-gradient(circle at 30% 30%, #ff5a7a, #c01a44) !important;
+  box-shadow:
+    0 0 0 4px rgba(255, 90, 120, 0.15),
+    0 0 18px rgba(255, 90, 120, 0.55) !important;
+}
+
+
+/* ---------- 3. Minor cohesion fixes -------------------------- */
+
+/* "+ Create Memory" FAB */
+.fab-create,
+.btn-create-memory,
+button.create-memory {
+  background: linear-gradient(180deg, #ff3a66, #c01a44) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  box-shadow:
+    0 18px 40px -10px rgba(192, 26, 68, 0.6),
+    0 1px 0 rgba(255,255,255,0.2) inset !important;
+}
+
+/* Section subtitle ("EVERY CHAPTER, IN ORDER") */
+.section-subtitle,
+.timeline-section .subtitle,
+#timeline .subtitle {
+  color: #d9a85a !important;
+  letter-spacing: 0.32em !important;
+  font-size: 12.5px !important;
+  text-transform: uppercase;
+}
